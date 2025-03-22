@@ -1,9 +1,35 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:travelouge_frontend/sign_in.dart';
 import 'package:travelouge_frontend/sign_up.dart';
+import 'home_page.dart'; // HomePage'i dahil ediyoruz
 
-class WelcomeScreen extends StatelessWidget {
+class WelcomeScreen extends StatefulWidget {
   const WelcomeScreen({super.key});
+
+  @override
+  _WelcomeScreenState createState() => _WelcomeScreenState();
+}
+
+class _WelcomeScreenState extends State<WelcomeScreen> {
+  @override
+  void initState() {
+    super.initState();
+    checkLoginStatus(); // Uygulama başlar başlamaz giriş durumu kontrol edilir
+  }
+
+  Future<void> checkLoginStatus() async {
+    final prefs = await SharedPreferences.getInstance();
+    String? token = prefs.getString('access_token');
+
+    if (token != null) {
+      print("🔓 Kullanıcı giriş yapmış, token geçerli: $token");
+      Navigator.pushReplacementNamed(context, '/home'); // Ana sayfaya yönlendir
+    } else {
+      print("🔐 Kullanıcı giriş yapmamış.");
+      // Kullanıcı giriş yapmamışsa, mevcut WelcomeScreen gösterilmeye devam eder
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -17,7 +43,7 @@ class WelcomeScreen extends StatelessWidget {
             fit: BoxFit.cover,
           ),
           Container(
-            color: Colors.black.withAlpha(128), // 128 = %50 opacity
+            color: Colors.black.withAlpha(128), // %50 opacity
           ),
           Padding(
             padding: const EdgeInsets.all(20.0),

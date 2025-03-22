@@ -1,5 +1,6 @@
 import 'dart:convert';
 //import 'package:flutter/material.dart';
+import 'package:dio/dio.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -36,35 +37,38 @@ class AuthService {
   }
 
   Future<bool> signIn(String username, String password) async {
-    final response = await http.post(
-      Uri.parse('$baseUrl/login/'),
-      body: {
-        'username': username,
-        'password': password,
-      },
-    );
+    try {
+      final dio = Dio();
+      final response = await dio.post(
+        "http://127.0.0.1:8000/api/token/",
+        data: {"username": username, "password": password},
+      );
 
-    if (response.statusCode == 200) {
-      final data = json.decode(response.body);
-      String token = data['token'];
+      if (response.statusCode == 200) {
+        final accessToken = response.data['access'];
+        final refreshToken = response.data['refresh'];
 
-      // Token'ı kaydet
-      SharedPreferences prefs = await SharedPreferences.getInstance();
-      await prefs.setString('token', token);
+        if (accessToken != null && refreshToken != null) {
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString('access_token', accessToken);
+          await prefs.setString('refresh_token', refreshToken);
 
-      return true;
-    } else {
+          print("✅ Giriş başarılı, token kaydedildi!");
+          print("Access Token: $accessToken");
+          print("Refresh Token: $refreshToken");
+
+          return true; // Başarılı giriş
+        } else {
+          print("❌ Erişim token'ları alınamadı.");
+          return false;
+        }
+      } else {
+        print("❌ Giriş başarısız: ${response.data}");
+        return false;
+      }
+    } catch (e) {
+      print("⚠️ Giriş hatası: $e");
       return false;
     }
-  }
-
-  Future<bool> isLoggedIn() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    return prefs.containsKey('token');
-  }
-
-  Future<void> logout() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.remove('token');
   }
 }

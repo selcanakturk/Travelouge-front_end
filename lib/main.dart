@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:travelouge_frontend/add_route_screen.dart';
 import 'package:travelouge_frontend/home_page.dart';
 import 'package:travelouge_frontend/sign_in.dart';
 import 'package:travelouge_frontend/sign_up.dart';
@@ -26,6 +27,7 @@ class MyApp extends StatelessWidget {
         '/signup': (context) => SignUpPage(),
         '/home': (context) => HomePage(),
         '/trips': (context) => TripsScreen(),
+        '/add-route': (context) => AddRouteScreen(),
       },
     );
   }
