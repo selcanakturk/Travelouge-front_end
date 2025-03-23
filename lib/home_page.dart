@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:travelouge_frontend/account_page.dart';
 import 'package:travelouge_frontend/trips_screen.dart';
 
 class HomePage extends StatelessWidget {
@@ -100,8 +101,8 @@ class HomePage extends StatelessWidget {
             Navigator.pushReplacement(context,
                 MaterialPageRoute(builder: (context) => TripsScreen()));
           } else if (index == 3) {
-            Navigator.pushReplacement(
-                context, MaterialPageRoute(builder: (context) => HomePage()));
+            Navigator.pushReplacement(context,
+                MaterialPageRoute(builder: (context) => AccountPage()));
           }
         },
         items: const [

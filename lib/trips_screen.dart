@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:dio/dio.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:travelouge_frontend/add_route_screen.dart';
+import 'package:travelouge_frontend/route_detail_page.dart';
+
+Dio dio = Dio();
 
 class TripsScreen extends StatefulWidget {
   TripsScreen({super.key});
@@ -9,29 +14,64 @@ class TripsScreen extends StatefulWidget {
 }
 
 class _TripsScreenState extends State<TripsScreen> {
-  List<Map<String, String>> userRoutes = []; // Başlangıçta boş liste
-
+  List<Map<String, String>> userRoutes = [];
   final String defaultImage =
-      "https://via.placeholder.com/300x200.png?text=No+Image"; // Varsayılan görsel
+      "https://via.placeholder.com/300x200.png?text=No+Image";
+
+  @override
+  void initState() {
+    super.initState();
+    fetchUserRoutes();
+  }
+
+  Future<void> fetchUserRoutes() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('access_token');
+
+    try {
+      final response = await dio.get(
+        'http://127.0.0.1:8000/api/routes/',
+        options: Options(
+          headers: {'Authorization': 'Bearer $token'},
+        ),
+      );
+
+      print("✅ Başarıyla çekildi: ${response.data}");
+
+      // Gelen veriyi listeye ekleyelim
+      List<dynamic> data = response.data; // JSON array
+
+      setState(() {
+        userRoutes = data.map<Map<String, String>>((route) {
+          return {
+            "title": route["title"]?.toString() ?? "Başlıksız",
+            "description": route["description"]?.toString() ?? "Açıklama yok",
+            "location": route["location"]?.toString() ?? "Bilinmeyen Konum",
+            "date": route["created_at"]?.toString() ?? "Tarih yok",
+            "image": (route["images"] != null && route["images"].isNotEmpty)
+                ? route["images"][0].toString()
+                : defaultImage,
+          };
+        }).toList();
+      });
+    } catch (e) {
+      print("❌ Hata oluştu: $e");
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          "Seyahatlerim",
-          style: TextStyle(color: Colors.white),
-        ),
+        title:
+            const Text("Seyahatlerim", style: TextStyle(color: Colors.white)),
         centerTitle: true,
         backgroundColor: Colors.black,
         elevation: 1,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () {
-            // HomeScreen'e geri dön
-            Navigator.pushNamedAndRemoveUntil(
-                context, '/home', (route) => false);
-          },
+          onPressed: () => Navigator.pushNamedAndRemoveUntil(
+              context, '/home', (route) => false),
         ),
       ),
       body: userRoutes.isEmpty
@@ -50,27 +90,18 @@ class _TripsScreenState extends State<TripsScreen> {
   Widget _buildFloatingButton() {
     return FloatingActionButton.extended(
       onPressed: () async {
-        final newRoute = await Navigator.push(
+        await Navigator.push(
           context,
           MaterialPageRoute(builder: (context) => AddRouteScreen()),
         );
-
-        if (newRoute != null) {
-          setState(() {
-            userRoutes.add(newRoute);
-          });
-        }
+        fetchUserRoutes(); // Yeni rota eklenince listeyi güncelle
       },
       icon: const Icon(Icons.add, size: 28, color: Colors.black),
-      label: const Text(
-        "Yeni Rota Ekle",
-        style: TextStyle(
-            fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black),
-      ),
-      backgroundColor: Colors.white, // Siyah arkaplan üstüne beyaz buton
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
+      label: const Text("Yeni Rota Ekle",
+          style: TextStyle(
+              fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black)),
+      backgroundColor: Colors.white,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       elevation: 8,
     );
   }
@@ -82,15 +113,11 @@ class _TripsScreenState extends State<TripsScreen> {
         children: [
           Icon(Icons.explore, size: 80, color: Colors.grey[400]),
           const SizedBox(height: 16),
-          const Text(
-            "Henüz bir rota eklemediniz!",
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
+          const Text("Henüz bir rota eklemediniz!",
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
-          const Text(
-            "Yeni bir keşif yapmaya ne dersiniz?",
-            style: TextStyle(fontSize: 16, color: Colors.grey),
-          ),
+          const Text("Yeni bir keşif yapmaya ne dersiniz?",
+              style: TextStyle(fontSize: 16, color: Colors.grey)),
         ],
       ),
     );
@@ -119,10 +146,8 @@ class _TripsScreenState extends State<TripsScreen> {
             ),
           ),
         ),
-        title: Text(
-          route["title"]!,
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
+        title: Text(route["title"]!,
+            style: const TextStyle(fontWeight: FontWeight.bold)),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -137,20 +162,14 @@ class _TripsScreenState extends State<TripsScreen> {
         ),
         onTap: () {
           // Rota detay sayfasına yönlendirme
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => RouteDetailPage(route: route),
+            ),
+          );
         },
       ),
     );
   }
-
-//   void _addRoute() {
-//     setState(() {
-//       userRoutes.add({
-//         "title": "Yeni Rota",
-//         "description": "Yeni keşfedilecek yer",
-//         "location": "Bilinmiyor",
-//         "date": "Tarih Eklenmedi",
-//         "image": "https://source.unsplash.com/300x200/?travel"
-//       });
-//     });
-//   }
 }

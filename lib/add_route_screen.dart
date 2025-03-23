@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:dio/dio.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:io';
+import 'package:travelouge_frontend/services/route_service.dart';
 
 class AddRouteScreen extends StatefulWidget {
   @override
@@ -13,6 +12,8 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
   List<XFile> _images = [];
+  final RouteService _routeService =
+      RouteService(); // Service sınıfını burada çağır
 
   Future<void> pickImages() async {
     final ImagePicker picker = ImagePicker();
@@ -25,21 +26,6 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
   }
 
   Future<void> submitRoute() async {
-    final prefs = await SharedPreferences.getInstance();
-    String? token = prefs.getString('access_token');
-    print("🛠️ Kaydedilen Token: $token"); // Token'ı terminalde gör
-
-    if (token == null) {
-      print("⚠️ Token bulunamadı, giriş yapmalısınız!");
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Lütfen giriş yapın!")),
-      );
-      return;
-    }
-
-    final dio = Dio();
-    dio.options.headers["Authorization"] = "Bearer $token";
-
     if (_titleController.text.isEmpty || _images.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -48,36 +34,20 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
       return;
     }
 
-    FormData formData = FormData.fromMap({
-      "title": _titleController.text,
-      "description": _descriptionController.text,
-      "images": await Future.wait(_images.map((image) async {
-        return await MultipartFile.fromFile(image.path, filename: image.name);
-      }).toList()),
-    });
+    bool success = await _routeService.addRoute(
+      _titleController.text,
+      _descriptionController.text,
+      _images,
+    );
 
-    try {
-      Response response = await dio.post(
-        "http://127.0.0.1:8000/api/routes/",
-        data: formData,
-      );
-
-      if (response.statusCode == 201) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("✅ Rota başarıyla eklendi")),
-        );
-        Navigator.pop(context);
-      } else {
-        print("❌ Hata: ${response.statusCode} - ${response.data}");
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text("❌ Rota eklenirken hata oluştu: ${response.data}")),
-        );
-      }
-    } catch (e) {
-      print("⚠️ Hata oluştu: $e");
+    if (success) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("⚠️ Bağlantı hatası, tekrar deneyin!")),
+        SnackBar(content: Text("✅ Rota başarıyla eklendi")),
+      );
+      Navigator.pop(context);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("❌ Rota eklenirken hata oluştu")),
       );
     }
   }
