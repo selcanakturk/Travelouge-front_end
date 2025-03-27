@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:travelouge_frontend/account_page.dart';
-import 'package:travelouge_frontend/add_route_screen.dart';
-import 'package:travelouge_frontend/home_page.dart';
-import 'package:travelouge_frontend/sign_in.dart';
-import 'package:travelouge_frontend/sign_up.dart';
-import 'package:travelouge_frontend/trips_screen.dart';
+import 'package:travelouge_frontend/features/auth/screens/sign_in_screen.dart';
+import 'package:travelouge_frontend/features/auth/screens/sign_up_screen.dart';
+import 'package:travelouge_frontend/features/home/screens/home_page.dart';
+import 'package:travelouge_frontend/features/profile/screens/account_screen.dart';
+import 'package:travelouge_frontend/features/route/screens/add_route_screen.dart';
+import 'package:travelouge_frontend/features/route/screens/trips_screen.dart';
 import 'package:travelouge_frontend/welcome_screen.dart';
 
 void main() {

@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:travelouge_frontend/add_route_screen.dart';
-import 'package:travelouge_frontend/route_detail_page.dart';
+import 'package:travelouge_frontend/features/route/screens/add_route_screen.dart';
+import 'package:travelouge_frontend/features/route/screens/route_detail_screen.dart';
 
 Dio dio = Dio();
 
 class TripsScreen extends StatefulWidget {
-  TripsScreen({super.key});
+  const TripsScreen({super.key});
 
   @override
   State<TripsScreen> createState() => _TripsScreenState();

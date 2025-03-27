@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:travelouge_frontend/services/auth_service.dart';
+import 'package:travelouge_frontend/data/services/auth_service.dart';
 
 class SignUpPage extends StatefulWidget {
   const SignUpPage({super.key});
