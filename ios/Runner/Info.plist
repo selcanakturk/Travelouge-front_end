@@ -30,12 +30,10 @@
 	<array/>
 	<key>NSAppTransportSecurity</key>
 	<dict/>
-	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-	<string>Konumunuzu belirlemek için izin gerekiyor.</string>
-	<key>NSLocationAlwaysUsageDescription</key>
-	<string>Bu uygulama, konum bilgilerinizi sürekli olarak kullanabilir.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>Konumunuzu belirlemek için izin gerekiyor.</string>
+<string>We need your location to mark your travel route on the map.</string>
+<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+<string>Location access is required to track your route.</string>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>UIBackgroundModes</key>

@@ -5,8 +5,8 @@ import 'package:image_picker/image_picker.dart';
 class RouteService {
   final String baseUrl = "http://127.0.0.1:8000/api";
 
-  Future<bool> addRoute(
-      String title, String description, List<XFile> images) async {
+  Future<bool> addRoute(String title, String description, List<XFile> images,
+      List<Map<String, double>> routeCoords) async {
     final prefs = await SharedPreferences.getInstance();
     String? token = prefs.getString('access_token');
 
