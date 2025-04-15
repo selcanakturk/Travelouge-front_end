@@ -2,6 +2,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:travelouge_frontend/features/profile/screens/change_password_screen.dart';
+import 'package:travelouge_frontend/widget/custom_bottom_nav.dart';
 
 class AccountPage extends StatefulWidget {
   const AccountPage({super.key});
@@ -54,6 +55,7 @@ class _AccountPageState extends State<AccountPage> {
           ),
         ],
       ),
+      bottomNavigationBar: const CustomBottomNav(currentIndex: 3),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(

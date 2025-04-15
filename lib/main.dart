@@ -4,6 +4,7 @@ import 'package:travelouge_frontend/features/auth/screens/sign_in_screen.dart';
 import 'package:travelouge_frontend/features/auth/screens/sign_up_screen.dart';
 import 'package:travelouge_frontend/features/auth/screens/welcome_screen.dart';
 import 'package:travelouge_frontend/features/home/screens/home_page.dart';
+import 'package:travelouge_frontend/features/home/screens/search_screen.dart';
 import 'package:travelouge_frontend/features/profile/screens/account_screen.dart';
 import 'package:travelouge_frontend/features/route/screens/add_route_screen.dart';
 import 'package:travelouge_frontend/features/route/screens/trips_screen.dart';
@@ -30,6 +31,7 @@ class MyApp extends StatelessWidget {
         '/trips': (context) => TripsScreen(),
         '/add-route': (context) => AddRouteScreen(),
         '/account': (context) => AccountPage(),
+        '/search': (context) => SearchPage(),
       },
     );
   }

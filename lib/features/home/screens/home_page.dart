@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:travelouge_frontend/features/home/screens/search_screen.dart';
 import 'package:travelouge_frontend/features/profile/screens/account_screen.dart';
 import 'package:travelouge_frontend/features/route/screens/trips_screen.dart';
+import 'package:travelouge_frontend/widget/custom_bottom_nav.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -84,34 +86,7 @@ class HomePage extends StatelessWidget {
           ),
         ),
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        backgroundColor: Colors.black,
-        type: BottomNavigationBarType.fixed,
-        unselectedItemColor: Colors.white70,
-        selectedItemColor: Colors.white,
-        onTap: (index) {
-          if (index == 0) {
-            Navigator.pushReplacement(
-                context, MaterialPageRoute(builder: (context) => HomePage()));
-          } else if (index == 1) {
-            Navigator.pushReplacement(
-                context, MaterialPageRoute(builder: (context) => HomePage()));
-          } else if (index == 2) {
-            Navigator.pushReplacement(context,
-                MaterialPageRoute(builder: (context) => TripsScreen()));
-          } else if (index == 3) {
-            Navigator.pushReplacement(context,
-                MaterialPageRoute(builder: (context) => AccountPage()));
-          }
-        },
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Ana Sayfa'),
-          BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Arayın'),
-          BottomNavigationBarItem(
-              icon: Icon(Icons.favorite), label: 'Seyahatler'),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Hesap'),
-        ],
-      ),
+      bottomNavigationBar: const CustomBottomNav(currentIndex: 0),
     );
   }
 
