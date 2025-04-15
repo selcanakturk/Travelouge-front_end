@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:travelouge_frontend/features/profile/screens/change_password_screen.dart';
 
 class AccountPage extends StatefulWidget {
   const AccountPage({super.key});
@@ -10,28 +11,28 @@ class AccountPage extends StatefulWidget {
 }
 
 class _AccountPageState extends State<AccountPage> {
-  String username = '';
-  String email = '';
-  String firstName = '';
-  String lastName = '';
+  String username = "";
+  String email = "";
+  String firstName = "";
+  String lastName = "";
 
   @override
   void initState() {
     super.initState();
-    _loadUserProfile();
+    _loadUserInfo();
   }
 
-  Future<void> _loadUserProfile() async {
+  Future<void> _loadUserInfo() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
-      username = prefs.getString('username') ?? '';
-      email = prefs.getString('email') ?? '';
-      firstName = prefs.getString('first_name') ?? '';
-      lastName = prefs.getString('last_name') ?? '';
+      username = prefs.getString("username") ?? "";
+      email = prefs.getString("email") ?? "";
+      firstName = prefs.getString("first_name") ?? "";
+      lastName = prefs.getString("last_name") ?? "";
     });
   }
 
-  Future<void> _logOut(BuildContext context) async {
+  Future<void> logOut(BuildContext context) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.clear();
     Navigator.pushReplacementNamed(context, '/welcome');
@@ -44,69 +45,71 @@ class _AccountPageState extends State<AccountPage> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        leading: BackButton(color: Colors.white),
         title: const Text("Hesabım",
-            style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: 20)),
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         actions: [
           IconButton(
             icon: const Icon(Icons.home, color: Colors.white),
-            onPressed: () {
-              Navigator.pushReplacementNamed(context, '/home');
-            },
+            onPressed: () => Navigator.pushReplacementNamed(context, '/home'),
           ),
         ],
       ),
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            _buildInfoCard(),
+            _buildGlassCard(children: [
+              _infoRow(Icons.person, "Ad", "$firstName $lastName"),
+              const SizedBox(height: 12),
+              _infoRow(Icons.account_circle, "Kullanıcı Adı", username),
+              const SizedBox(height: 12),
+              _infoRow(Icons.email, "E-posta", email),
+            ]),
+            const SizedBox(height: 15),
+            ElevatedButton.icon(
+              onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (_) => const ChangePasswordPage())),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.white10,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 55, vertical: 14),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)),
+              ),
+              icon: const Icon(Icons.lock, color: Colors.white),
+              label: const Text("Şifreyi Değiştir",
+                  style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      color: Colors.white)),
+            ),
             const Spacer(),
             ElevatedButton.icon(
-              onPressed: () => _logOut(context),
-              icon: const Icon(Icons.logout, color: Colors.white),
-              label: const Text("Çıkış Yap",
-                  style: TextStyle(color: Colors.white)),
+              onPressed: () => logOut(context),
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.purple, // Rota ekleme butonunun rengi
+                backgroundColor: Colors.purple,
                 padding:
                     const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
                 shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16)),
+                    borderRadius: BorderRadius.circular(12)),
               ),
+              icon: const Icon(Icons.logout, color: Colors.white),
+              label: const Text("Çıkış Yap",
+                  style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      color: Colors.white)),
             ),
-            const SizedBox(height: 60),
+            const SizedBox(height: 80),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildInfoCard() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.grey.shade900.withOpacity(0.7),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _infoRow(Icons.badge, "Ad Soyad", "$firstName $lastName"),
-          const SizedBox(height: 16),
-          _infoRow(Icons.person, "Kullanıcı Adı", username),
-          const SizedBox(height: 16),
-          _infoRow(Icons.email, "E-posta", email),
-        ],
-      ),
-    );
-  }
-
-  Widget _infoRow(IconData icon, String label, String value) {
+  Widget _infoRow(IconData icon, String title, String value) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -116,18 +119,39 @@ class _AccountPageState extends State<AccountPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(label,
+              Text(title,
                   style: const TextStyle(
-                      color: Colors.white,
+                      fontSize: 16,
                       fontWeight: FontWeight.bold,
-                      fontSize: 15)),
+                      color: Colors.white)),
               const SizedBox(height: 4),
-              Text(value.isNotEmpty ? value : "-",
-                  style: const TextStyle(color: Colors.white70)),
+              Text(value, style: const TextStyle(color: Colors.white70)),
             ],
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildGlassCard({required List<Widget> children}) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(24),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: Colors.grey[900]!.withOpacity(0.2),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: Colors.white.withOpacity(0.15)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: children,
+          ),
+        ),
+      ),
     );
   }
 }

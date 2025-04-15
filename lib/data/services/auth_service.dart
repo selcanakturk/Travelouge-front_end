@@ -105,4 +105,43 @@ class AuthService {
       print("❌ Kullanıcı profil verisi alınamadı: $e");
     }
   }
+
+  Future<bool> changePassword(
+      String oldPassword, String newPassword, String confirmPassword) async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('access_token');
+
+    if (token == null) {
+      print("⚠️ Token bulunamadı.");
+      return false;
+    }
+
+    final dio = Dio();
+
+    try {
+      final response = await dio.post(
+        "http://127.0.0.1:8000/api/change-password/", // <-- PUT yerine POST
+        data: {
+          "old_password": oldPassword,
+          "new_password": newPassword,
+          "confirm_password": confirmPassword,
+        },
+        options: Options(
+          headers: {
+            "Authorization": "Bearer $token",
+            "Content-Type": "application/json",
+          },
+        ),
+      );
+
+      print("✅ Şifre güncellendi: ${response.data}");
+      return true;
+    } on DioException catch (e) {
+      print("❌ Dio Hatası: ${e.response?.data}");
+      return false;
+    } catch (e) {
+      print("❌ Genel Hata: $e");
+      return false;
+    }
+  }
 }
