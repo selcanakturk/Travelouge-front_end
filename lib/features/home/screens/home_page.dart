@@ -89,7 +89,6 @@ class HomePage extends StatelessWidget {
         type: BottomNavigationBarType.fixed,
         unselectedItemColor: Colors.white70,
         selectedItemColor: Colors.white,
-        //currentIndex: _selectedIndex, // Seçili sayfa indexini takip eder
         onTap: (index) {
           if (index == 0) {
             Navigator.pushReplacement(
@@ -154,24 +153,30 @@ class HomePage extends StatelessWidget {
 
   Widget _buildHorizontalList() {
     return SizedBox(
-      height: 350, // Resimleri büyütmek için yüksekliği artırdım
+      height: 350,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         itemCount: 5,
         itemBuilder: (context, index) {
           return GestureDetector(
             onTap: () {
-              // Burada butona basınca olacak şeyi tanımla
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(content: Text('Seçilen yer $index')),
               );
             },
             child: Container(
-              width: 250, // Resim genişliğini büyüttüm
+              width: 250,
               margin: const EdgeInsets.symmetric(horizontal: 8),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(15),
-                color: Colors.white24,
+                color: const Color(0xFF2C2C2E),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.4),
+                    offset: const Offset(0, 2),
+                    blurRadius: 6,
+                  ),
+                ],
                 image: const DecorationImage(
                   image: NetworkImage('https://source.unsplash.com/random'),
                   fit: BoxFit.cover,
@@ -185,6 +190,13 @@ class HomePage extends StatelessWidget {
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
                   fontSize: 22,
+                  shadows: [
+                    Shadow(
+                      color: Colors.black45,
+                      offset: Offset(0, 1),
+                      blurRadius: 2,
+                    )
+                  ],
                 ),
               ),
             ),

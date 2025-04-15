@@ -123,13 +123,12 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
                   options: MapOptions(
                     initialCenter: center,
                     initialZoom: 13,
-                    onTap: _locationPermissionGranted
-                        ? (tapPosition, point) {
-                            setState(() {
-                              _routePoints.add(point);
-                            });
-                          }
-                        : null,
+                    onTap: (tapPosition, point) {
+                      setState(() {
+                        _routePoints.add(point);
+                        print("📍 Added: $point");
+                      });
+                    },
                   ),
                   children: [
                     TileLayer(

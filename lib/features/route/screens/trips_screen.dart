@@ -16,7 +16,8 @@ class TripsScreen extends StatefulWidget {
 
 class _TripsScreenState extends State<TripsScreen> {
   List<Map<String, dynamic>> userRoutes = [];
-  final String defaultImage = 'assets/png/default.jpg';
+  final String defaultImage = 'assets/png/default.png';
+
   @override
   void initState() {
     super.initState();
@@ -26,9 +27,8 @@ class _TripsScreenState extends State<TripsScreen> {
   String formatDate(dynamic rawDate) {
     try {
       if (rawDate == null || rawDate.toString().isEmpty) return "Tarih yok";
-
       final dateTime = DateTime.parse(rawDate.toString());
-      final formatter = DateFormat('d MMMM y', 'tr_TR'); // Örnek: 22 Mart 2025
+      final formatter = DateFormat('d MMMM y', 'tr_TR');
       return formatter.format(dateTime);
     } catch (e) {
       return "Tarih yok";
@@ -43,32 +43,27 @@ class _TripsScreenState extends State<TripsScreen> {
     try {
       final response = await dio.get(
         '$baseUrl/api/routes/',
-        options: Options(
-          headers: {'Authorization': 'Bearer $token'},
-        ),
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
       );
-
-      print("🧪 Backend verisi: ${response.data}");
 
       List<dynamic> data = response.data;
 
       setState(() {
         userRoutes = data.map<Map<String, dynamic>>((route) {
           String imageUrl = defaultImage;
-
           if (route["images"] != null &&
               route["images"].isNotEmpty &&
               route["images"][0]["image"] != null) {
             imageUrl = "$baseUrl${route["images"][0]["image"]}";
           }
-
           return {
             "title": route["title"]?.toString() ?? "Başlıksız",
             "description": route["description"]?.toString() ?? "Açıklama yok",
             "location": route["location"]?.toString() ?? "Bilinmeyen Konum",
             "date": route["created_at"] ?? "",
             "image": imageUrl,
-            "images": route["images"] ?? [], // 🔥 asıl veri bu
+            "images": route["images"] ?? [],
+            "coordinates": route["coordinates"] ?? [],
           };
         }).toList();
       });
@@ -80,12 +75,13 @@ class _TripsScreenState extends State<TripsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.black,
       appBar: AppBar(
         title:
             const Text("Seyahatlerim", style: TextStyle(color: Colors.white)),
         centerTitle: true,
-        backgroundColor: Colors.black,
-        elevation: 1,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () => Navigator.pushNamedAndRemoveUntil(
@@ -97,10 +93,10 @@ class _TripsScreenState extends State<TripsScreen> {
           : GridView.builder(
               padding: const EdgeInsets.all(16),
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2, // 2 sütun
+                crossAxisCount: 2,
                 crossAxisSpacing: 12,
                 mainAxisSpacing: 12,
-                childAspectRatio: 0.8, // Kart yüksekliğini ayarlar
+                childAspectRatio: 0.8,
               ),
               itemCount: userRoutes.length,
               itemBuilder: (context, index) {
@@ -114,25 +110,20 @@ class _TripsScreenState extends State<TripsScreen> {
   Widget _buildFloatingButton() {
     return Padding(
       padding: const EdgeInsets.only(bottom: 20.0, right: 12.0),
-      child: Align(
-        alignment: Alignment.bottomRight,
-        child: FloatingActionButton.extended(
-          onPressed: () async {
-            await Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => AddRouteScreen()),
-            );
-            fetchUserRoutes();
-          },
-          icon: const Icon(Icons.add, color: Colors.white),
-          label: const Text("Yeni Rota",
-              style:
-                  TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-          backgroundColor: Colors.black,
-          elevation: 10,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        ),
+      child: FloatingActionButton.extended(
+        onPressed: () async {
+          await Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => AddRouteScreen()),
+          );
+          fetchUserRoutes();
+        },
+        icon: const Icon(Icons.add, color: Colors.white),
+        label: const Text("Yeni Rota",
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        backgroundColor: Colors.purple,
+        elevation: 10,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       ),
     );
   }
@@ -142,13 +133,16 @@ class _TripsScreenState extends State<TripsScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.explore, size: 80, color: Colors.grey[400]),
+          Icon(Icons.explore, size: 80, color: Colors.white24),
           const SizedBox(height: 16),
           const Text("Henüz bir rota eklemediniz!",
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white)),
           const SizedBox(height: 8),
           const Text("Yeni bir keşif yapmaya ne dersiniz?",
-              style: TextStyle(fontSize: 16, color: Colors.grey)),
+              style: TextStyle(fontSize: 16, color: Colors.white60)),
         ],
       ),
     );
@@ -168,11 +162,11 @@ class _TripsScreenState extends State<TripsScreen> {
         );
       },
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
         child: Stack(
           children: [
             Hero(
-              tag: imageUrl + route["title"], // ✅ her kart için benzersiz yap
+              tag: imageUrl + route["title"],
               child: isNetwork
                   ? Image.network(
                       imageUrl,

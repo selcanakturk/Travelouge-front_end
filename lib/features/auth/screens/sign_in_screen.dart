@@ -12,6 +12,7 @@ class _SignInPageState extends State<SignInPage> {
   final _authService = AuthService();
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  bool _obscurePassword = true;
 
   void _login() async {
     bool success = await _authService.signIn(
@@ -23,7 +24,8 @@ class _SignInPageState extends State<SignInPage> {
       Navigator.pushReplacementNamed(context, '/home');
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Login failed! Try again.")),
+        const SnackBar(
+            content: Text("Giriş başarısız! Lütfen tekrar deneyin.")),
       );
     }
   }
@@ -31,82 +33,119 @@ class _SignInPageState extends State<SignInPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Stack(
-        children: [
-          Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Colors.blueAccent, Colors.purpleAccent],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
+      backgroundColor: Colors.black,
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 32.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Align(
+                alignment: Alignment.topLeft,
+                child: IconButton(
+                  icon: const Icon(Icons.close, color: Colors.white, size: 30),
+                  onPressed: () => Navigator.pop(context),
+                ),
               ),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(20.0),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const SizedBox(height: 40),
-                  const Text(
-                    "Login to Travelouge",
+              const SizedBox(height: 24),
+              const Text(
+                "Merhaba, tekrar hoş geldiniz",
+                style: TextStyle(
+                  fontSize: 26,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+              const SizedBox(height: 32),
+              const Text("Kullanıcı Adı",
+                  style: TextStyle(color: Colors.white70, fontSize: 14)),
+              const SizedBox(height: 8),
+              _buildTextField("Kullanıcı Adı", _usernameController),
+              const SizedBox(height: 20),
+              const Text("Parola",
+                  style: TextStyle(color: Colors.white70, fontSize: 14)),
+              const SizedBox(height: 8),
+              _buildPasswordField("Parola", _passwordController),
+              const SizedBox(height: 12),
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: () {},
+                  child: const Text("Parolanızı mı unuttunuz?",
+                      style: TextStyle(color: Colors.white)),
+                ),
+              ),
+              const SizedBox(height: 32),
+              SizedBox(
+                width: double.infinity,
+                height: 56,
+                child: ElevatedButton(
+                  onPressed: _login,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(28),
+                    ),
+                  ),
+                  child: const Text(
+                    "Haydi başlayalım",
                     style: TextStyle(
-                        fontSize: 24,
+                        fontSize: 16,
                         fontWeight: FontWeight.bold,
-                        color: Colors.white),
+                        color: Colors.black),
                   ),
-                  const SizedBox(height: 20),
-                  _buildTextField("Username", _usernameController),
-                  const SizedBox(height: 10),
-                  _buildTextField("Password", _passwordController,
-                      isPassword: true),
-                  const SizedBox(height: 20),
-                  ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8)),
-                    ),
-                    onPressed: _login,
-                    child: const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 12),
-                      child: Text("SIGN IN",
-                          style: TextStyle(color: Colors.black, fontSize: 18)),
-                    ),
-                  ),
-                ],
-              ),
-            ),
+                ),
+              )
+            ],
           ),
-          Positioned(
-            top: 40,
-            left: 10,
-            child: IconButton(
-              icon: const Icon(Icons.arrow_back, color: Colors.white, size: 30),
-              onPressed: () {
-                Navigator.pop(context);
-              },
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
 
-  Widget _buildTextField(String hint, TextEditingController controller,
-      {bool isPassword = false}) {
+  Widget _buildTextField(String hint, TextEditingController controller) {
     return TextField(
       controller: controller,
-      obscureText: isPassword,
+      style: const TextStyle(color: Colors.white),
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: const TextStyle(color: Colors.white70),
+        hintStyle: const TextStyle(color: Colors.white60),
         filled: true,
-        fillColor: Colors.black.withAlpha(77),
+        fillColor: Colors.white10,
         border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8),
-            borderSide: BorderSide.none),
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide.none,
+        ),
       ),
+    );
+  }
+
+  Widget _buildPasswordField(String hint, TextEditingController controller) {
+    return TextField(
+      controller: controller,
+      obscureText: _obscurePassword,
       style: const TextStyle(color: Colors.white),
+      decoration: InputDecoration(
+        hintText: hint,
+        hintStyle: const TextStyle(color: Colors.white60),
+        filled: true,
+        fillColor: Colors.white10,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide.none,
+        ),
+        suffixIcon: IconButton(
+          icon: Icon(
+            _obscurePassword ? Icons.visibility : Icons.visibility_off,
+            color: Colors.white70,
+          ),
+          onPressed: () {
+            setState(() {
+              _obscurePassword = !_obscurePassword;
+            });
+          },
+        ),
+      ),
     );
   }
 }

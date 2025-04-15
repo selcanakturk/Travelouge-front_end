@@ -10,32 +10,35 @@ class SignUpPage extends StatefulWidget {
 
 class _SignUpPageState extends State<SignUpPage> {
   final _authService = AuthService();
-  final _formKey = GlobalKey<FormState>(); // FormKey ekleyin
+  final _formKey = GlobalKey<FormState>();
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _confirmPasswordController =
+      TextEditingController();
   final TextEditingController _firstNameController = TextEditingController();
   final TextEditingController _lastNameController = TextEditingController();
+  bool _obscurePassword = true;
 
   void _register() async {
-    // Form doğrulamasını yap
     if (_formKey.currentState?.validate() ?? false) {
       bool success = await _authService.signUp(
         _usernameController.text,
         _emailController.text,
         _passwordController.text,
+        _confirmPasswordController.text,
         _firstNameController.text,
         _lastNameController.text,
       );
 
       if (success) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Registration successful!")),
+          const SnackBar(content: Text("Kayıt başarılı!")),
         );
         Navigator.pop(context);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Registration failed! Try again.")),
+          const SnackBar(content: Text("Kayıt başarısız!")),
         );
       }
     }
@@ -44,98 +47,82 @@ class _SignUpPageState extends State<SignUpPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.black,
       body: Stack(
         children: [
-          Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Colors.blueAccent, Colors.purpleAccent],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(20.0),
-              child: Form(
-                // Form widget'ini ekliyoruz
-                key: _formKey, // FormKey'i burada kullanıyoruz
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const SizedBox(height: 40),
-                    const Text(
-                      "Create an Account",
-                      style: TextStyle(
-                        fontSize: 24,
+          Padding(
+            padding: const EdgeInsets.all(20.0),
+            child: Form(
+              key: _formKey,
+              child: ListView(
+                padding: const EdgeInsets.only(top: 100),
+                children: [
+                  const Text(
+                    "Hesap Oluştur",
+                    style: TextStyle(
+                        fontSize: 26,
                         fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    _buildTextField("First Name", _firstNameController,
-                        (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'First Name is required';
-                      }
-                      return null;
-                    }),
-                    const SizedBox(height: 10),
-                    _buildTextField("Last Name", _lastNameController, (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Last Name is required';
-                      }
-                      return null;
-                    }),
-                    const SizedBox(height: 10),
-                    _buildTextField("Username", _usernameController, (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Username is required';
-                      }
-                      return null;
-                    }),
-                    const SizedBox(height: 10),
-                    _buildTextField("Email", _emailController, (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Email is required';
-                      }
-                      return null;
-                    }),
-                    const SizedBox(height: 10),
-                    _buildTextField("Password", _passwordController, (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Password is required';
-                      }
-                      return null;
-                    }, isPassword: true),
-                    const SizedBox(height: 20),
-                    ElevatedButton(
+                        color: Colors.white),
+                  ),
+                  const SizedBox(height: 30),
+                  _buildTextField("Ad", _firstNameController,
+                      (v) => v!.isEmpty ? "Ad gerekli" : null),
+                  const SizedBox(height: 12),
+                  _buildTextField("Soyad", _lastNameController,
+                      (v) => v!.isEmpty ? "Soyad gerekli" : null),
+                  const SizedBox(height: 12),
+                  _buildTextField("Kullanıcı Adı", _usernameController,
+                      (v) => v!.isEmpty ? "Kullanıcı adı gerekli" : null),
+                  const SizedBox(height: 12),
+                  _buildTextField("E-posta", _emailController,
+                      (v) => v!.isEmpty ? "E-posta gerekli" : null),
+                  const SizedBox(height: 12),
+                  _buildTextField("Parola", _passwordController,
+                      (v) => v!.isEmpty ? "Parola gerekli" : null,
+                      isPassword: true),
+                  const SizedBox(height: 12),
+                  _buildTextField(
+                      "Parolayı Doğrula", _confirmPasswordController, (v) {
+                    if (v == null || v.isEmpty) {
+                      return "Lütfen parolayı tekrar girin";
+                    }
+                    if (v != _passwordController.text) {
+                      return "Parolalar eşleşmiyor";
+                    }
+                    return null;
+                  }, isPassword: true),
+                  const SizedBox(height: 24),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 50,
+                    child: ElevatedButton(
+                      onPressed: _register,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.white,
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
+                            borderRadius: BorderRadius.circular(16)),
                       ),
-                      onPressed: _register,
-                      child: const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 12),
-                        child: Text(
-                          "SIGN UP",
-                          style: TextStyle(color: Colors.black, fontSize: 18),
-                        ),
+                      child: const Text(
+                        "Kayıt Ol",
+                        style: TextStyle(
+                            fontSize: 16,
+                            color: Colors.black,
+                            fontWeight: FontWeight.bold),
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
           ),
+          // 🔙 Geri Dön Butonu
           Positioned(
             top: 40,
             left: 10,
             child: IconButton(
               icon: const Icon(Icons.arrow_back, color: Colors.white, size: 30),
               onPressed: () {
-                Navigator.pop(context);
+                Navigator.pushReplacementNamed(context, '/welcome');
               },
             ),
           ),
@@ -144,29 +131,36 @@ class _SignUpPageState extends State<SignUpPage> {
     );
   }
 
-  // TextFormField'i form doğrulama ile genişletiyoruz
-  Widget _buildTextField(String hint, TextEditingController controller,
-      String? Function(String?) validator,
-      {bool isPassword = false}) {
+  Widget _buildTextField(
+    String hint,
+    TextEditingController controller,
+    String? Function(String?) validator, {
+    bool isPassword = false,
+  }) {
     return TextFormField(
       controller: controller,
-      obscureText: isPassword,
+      validator: validator,
+      obscureText: isPassword && _obscurePassword,
+      style: const TextStyle(color: Colors.white),
       decoration: InputDecoration(
         hintText: hint,
         hintStyle: const TextStyle(color: Colors.white70),
         filled: true,
-        fillColor: Colors.black.withAlpha(77),
+        fillColor: Colors.white.withOpacity(0.1),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,
         ),
-        errorStyle: const TextStyle(
-          color: Colors.white, // Burada hata mesajının rengini beyaz yapıyoruz
-          fontSize: 14, // İsterseniz font boyutunu da değiştirebilirsiniz
-        ),
+        suffixIcon: isPassword
+            ? IconButton(
+                icon: Icon(
+                    _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                    color: Colors.white70),
+                onPressed: () =>
+                    setState(() => _obscurePassword = !_obscurePassword),
+              )
+            : null,
       ),
-      style: const TextStyle(color: Colors.white),
-      validator: validator, // Validator fonksiyonu ekliyoruz
     );
   }
 }

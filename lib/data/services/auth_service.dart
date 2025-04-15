@@ -1,46 +1,54 @@
-//import 'dart:convert';
-//import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
-import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AuthService {
   final String baseUrl = "http://127.0.0.1:8000/api";
 
-  Future<bool> signUp(String username, String email, String password,
-      String firstName, String lastName) async {
+  // 🚀 Kayıt olma
+  Future<bool> signUp(
+    String username,
+    String email,
+    String password,
+    String confirmPassword,
+    String firstName,
+    String lastName,
+  ) async {
+    final dio = Dio();
+
     try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/register/'),
-        body: {
+      final response = await dio.post(
+        '$baseUrl/register/',
+        data: {
           'username': username,
           'email': email,
           'password': password,
+          'confirm_password': confirmPassword,
           'first_name': firstName,
           'last_name': lastName,
         },
+        options: Options(headers: {
+          'Content-Type': 'application/json',
+        }),
       );
-      print("Response status: ${response.statusCode}");
-      print("Response body: ${response.body}");
 
-      if (response.statusCode == 201) {
-        return true;
-      } else {
-        print("Registration failed: ${response.body}");
-        return false;
-      }
+      print("✅ Kayıt başarılı: ${response.statusCode} - ${response.data}");
+      return response.statusCode == 201;
+    } on DioException catch (e) {
+      print("❌ Kayıt hatası: ${e.response?.data}");
+      return false;
     } catch (e) {
-      // Hata durumunu yakala
-      print("Error during registration: $e");
+      print("⚠️ Genel kayıt hatası: $e");
       return false;
     }
   }
 
+  // 🔐 Giriş işlemi
   Future<bool> signIn(String username, String password) async {
+    final dio = Dio();
+
     try {
-      final dio = Dio();
       final response = await dio.post(
-        "http://127.0.0.1:8000/api/token/",
+        "$baseUrl/token/",
         data: {"username": username, "password": password},
       );
 
@@ -52,14 +60,15 @@ class AuthService {
           final prefs = await SharedPreferences.getInstance();
           await prefs.setString('access_token', accessToken);
           await prefs.setString('refresh_token', refreshToken);
+          await prefs.setString('username', username);
 
-          print("✅ Giriş başarılı, token kaydedildi!");
-          print("Access Token: $accessToken");
-          print("Refresh Token: $refreshToken");
+          // 👤 Kullanıcı bilgilerini çek
+          await fetchUserProfile();
 
-          return true; // Başarılı giriş
+          print("✅ Giriş başarılı, token ve kullanıcı bilgileri kaydedildi!");
+          return true;
         } else {
-          print("❌ Erişim token'ları alınamadı.");
+          print("❌ Token bilgileri eksik.");
           return false;
         }
       } else {
@@ -69,6 +78,31 @@ class AuthService {
     } catch (e) {
       print("⚠️ Giriş hatası: $e");
       return false;
+    }
+  }
+
+  // 👤 Kullanıcı bilgilerini çek ve kaydet
+  Future<void> fetchUserProfile() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('access_token');
+    final dio = Dio();
+
+    try {
+      final response = await dio.get(
+        "$baseUrl/profile/",
+        options: Options(headers: {
+          'Authorization': 'Bearer $token',
+        }),
+      );
+
+      final data = response.data;
+      await prefs.setString('email', data['email'] ?? '');
+      await prefs.setString('first_name', data['first_name'] ?? '');
+      await prefs.setString('last_name', data['last_name'] ?? '');
+
+      print("👤 Kullanıcı profil verisi başarıyla kaydedildi");
+    } catch (e) {
+      print("❌ Kullanıcı profil verisi alınamadı: $e");
     }
   }
 }
