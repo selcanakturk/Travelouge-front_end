@@ -33,12 +33,12 @@ class _SignUpPageState extends State<SignUpPage> {
 
       if (success) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Kayıt başarılı!")),
+          const SnackBar(content: Text("Registration successful!")),
         );
         Navigator.pop(context);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Kayıt başarısız!")),
+          const SnackBar(content: Text("Registration failed!")),
         );
       }
     }
@@ -58,36 +58,36 @@ class _SignUpPageState extends State<SignUpPage> {
                 padding: const EdgeInsets.only(top: 100),
                 children: [
                   const Text(
-                    "Hesap Oluştur",
+                    "Create Account",
                     style: TextStyle(
                         fontSize: 26,
                         fontWeight: FontWeight.bold,
                         color: Colors.white),
                   ),
                   const SizedBox(height: 30),
-                  _buildTextField("Ad", _firstNameController,
-                      (v) => v!.isEmpty ? "Ad gerekli" : null),
+                  _buildTextField("First Name", _firstNameController,
+                      (v) => v!.isEmpty ? "First name is required" : null),
                   const SizedBox(height: 12),
-                  _buildTextField("Soyad", _lastNameController,
-                      (v) => v!.isEmpty ? "Soyad gerekli" : null),
+                  _buildTextField("Last Name", _lastNameController,
+                      (v) => v!.isEmpty ? "Last name is required" : null),
                   const SizedBox(height: 12),
-                  _buildTextField("Kullanıcı Adı", _usernameController,
-                      (v) => v!.isEmpty ? "Kullanıcı adı gerekli" : null),
+                  _buildTextField("Username", _usernameController,
+                      (v) => v!.isEmpty ? "Username is required" : null),
                   const SizedBox(height: 12),
-                  _buildTextField("E-posta", _emailController,
-                      (v) => v!.isEmpty ? "E-posta gerekli" : null),
+                  _buildTextField("Email", _emailController,
+                      (v) => v!.isEmpty ? "Email is required" : null),
                   const SizedBox(height: 12),
-                  _buildTextField("Parola", _passwordController,
-                      (v) => v!.isEmpty ? "Parola gerekli" : null,
+                  _buildTextField("Password", _passwordController,
+                      (v) => v!.isEmpty ? "Password is required" : null,
                       isPassword: true),
                   const SizedBox(height: 12),
                   _buildTextField(
-                      "Parolayı Doğrula", _confirmPasswordController, (v) {
+                      "Confirm Password", _confirmPasswordController, (v) {
                     if (v == null || v.isEmpty) {
-                      return "Lütfen parolayı tekrar girin";
+                      return "Please re-enter your password";
                     }
                     if (v != _passwordController.text) {
-                      return "Parolalar eşleşmiyor";
+                      return "Passwords do not match";
                     }
                     return null;
                   }, isPassword: true),
@@ -103,7 +103,7 @@ class _SignUpPageState extends State<SignUpPage> {
                             borderRadius: BorderRadius.circular(16)),
                       ),
                       child: const Text(
-                        "Kayıt Ol",
+                        "Sign Up",
                         style: TextStyle(
                             fontSize: 16,
                             color: Colors.black,
@@ -115,15 +115,13 @@ class _SignUpPageState extends State<SignUpPage> {
               ),
             ),
           ),
-          // 🔙 Geri Dön Butonu
+          // 🔙 Back Button
           Positioned(
             top: 40,
             left: 10,
             child: IconButton(
               icon: const Icon(Icons.arrow_back, color: Colors.white, size: 30),
-              onPressed: () {
-                Navigator.pushReplacementNamed(context, '/welcome');
-              },
+              onPressed: () => Navigator.pop(context),
             ),
           ),
         ],
