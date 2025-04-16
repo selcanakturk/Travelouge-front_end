@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
+import 'package:geocoding/geocoding.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:travelouge_frontend/features/route/screens/add_route_screen.dart';
 import 'package:travelouge_frontend/features/route/screens/route_detail_screen.dart';
@@ -27,10 +28,15 @@ class _TripsScreenState extends State<TripsScreen> {
   String formatDate(dynamic rawDate) {
     try {
       if (rawDate == null || rawDate.toString().isEmpty) return "Tarih yok";
-      final dateTime = DateTime.parse(rawDate.toString());
-      final formatter = DateFormat('d MMMM y', 'tr_TR');
-      return formatter.format(dateTime);
+
+      final dateTime = DateTime.tryParse(rawDate.toString());
+      if (dateTime == null) return "Tarih yok";
+
+      final localDate = dateTime.toLocal(); // 🔁 UTC -> yerel saat dilimi
+      final formatter = DateFormat('d MMMM y', 'tr_TR'); // örn: 16 Nisan 2025
+      return formatter.format(localDate);
     } catch (e) {
+      print("📅 Tarih formatlama hatası: $e");
       return "Tarih yok";
     }
   }
@@ -48,27 +54,36 @@ class _TripsScreenState extends State<TripsScreen> {
 
       List<dynamic> data = response.data;
 
+      // Asenkron şekilde her rota için konum çözümle
+      List<Map<String, dynamic>> routes = [];
+      for (var route in data) {
+        String imageUrl = defaultImage;
+        if (route["images"] != null &&
+            route["images"].isNotEmpty &&
+            route["images"][0]["image"] != null) {
+          imageUrl = "$baseUrl${route["images"][0]["image"]}";
+        }
+
+        // 🗺️ Konum çözümleme
+        String location =
+            await _getLocationFromCoordinates(route["coordinates"]);
+
+        routes.add({
+          "title": route["title"]?.toString() ?? "Başlıksız",
+          "description": route["description"]?.toString() ?? "Açıklama yok",
+          "location": location,
+          "date": route["created_at"] ?? "",
+          "image": imageUrl,
+          "images": route["images"] ?? [],
+          "coordinates": route["coordinates"] ?? [],
+        });
+      }
+
       setState(() {
-        userRoutes = data.map<Map<String, dynamic>>((route) {
-          String imageUrl = defaultImage;
-          if (route["images"] != null &&
-              route["images"].isNotEmpty &&
-              route["images"][0]["image"] != null) {
-            imageUrl = "$baseUrl${route["images"][0]["image"]}";
-          }
-          return {
-            "title": route["title"]?.toString() ?? "Başlıksız",
-            "description": route["description"]?.toString() ?? "Açıklama yok",
-            "location": route["location"]?.toString() ?? "Bilinmeyen Konum",
-            "date": route["created_at"] ?? "",
-            "image": imageUrl,
-            "images": route["images"] ?? [],
-            "coordinates": route["coordinates"] ?? [],
-          };
-        }).toList();
+        userRoutes = routes;
       });
     } catch (e) {
-      print("❌ Hata oluştu: \$e");
+      print("❌ Hata oluştu: $e");
     }
   }
 
@@ -249,5 +264,27 @@ class _TripsScreenState extends State<TripsScreen> {
         ),
       ),
     );
+  }
+}
+
+Future<String> _getLocationFromCoordinates(dynamic coords) async {
+  try {
+    if (coords == null || coords.isEmpty) return "Konum belirtilmedi";
+    final lat = coords[0]["latitude"];
+    final lng = coords[0]["longitude"];
+
+    final placemarks = await placemarkFromCoordinates(lat, lng);
+    if (placemarks.isNotEmpty) {
+      final place = placemarks.first;
+      return place.locality ??
+          place.administrativeArea ??
+          place.country ??
+          "Bilinmeyen Konum";
+    } else {
+      return "Konum bulunamadı";
+    }
+  } catch (e) {
+    print("📍 Konum çözümleme hatası: $e");
+    return "Konum bulunamadı";
   }
 }

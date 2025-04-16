@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:travelouge_frontend/features/home/screens/search_screen.dart';
-import 'package:travelouge_frontend/features/profile/screens/account_screen.dart';
-import 'package:travelouge_frontend/features/route/screens/trips_screen.dart';
 import 'package:travelouge_frontend/widget/custom_bottom_nav.dart';
 
 class HomePage extends StatelessWidget {

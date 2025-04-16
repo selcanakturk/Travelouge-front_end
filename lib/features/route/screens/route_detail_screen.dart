@@ -1,7 +1,9 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
-import 'package:latlong2/latlong.dart';
+import 'package:latlong2/latlong.dart' as osm;
+import 'package:google_maps_flutter/google_maps_flutter.dart' as gmap;
+import 'route_preview_map_screen.dart';
 
 class RouteDetailPage extends StatefulWidget {
   final Map<String, dynamic> route;
@@ -14,7 +16,7 @@ class RouteDetailPage extends StatefulWidget {
 
 class _RouteDetailPageState extends State<RouteDetailPage> {
   List<String> imageUrls = [];
-  List<LatLng> coordinates = [];
+  List<osm.LatLng> coordinates = [];
   int currentIndex = 0;
   final String defaultImage = 'assets/png/default.png';
   final String baseUrl = 'http://127.0.0.1:8000';
@@ -22,6 +24,7 @@ class _RouteDetailPageState extends State<RouteDetailPage> {
   @override
   void initState() {
     super.initState();
+
     final List<dynamic>? images = widget.route["images"];
     if (images != null && images.isNotEmpty) {
       imageUrls = images
@@ -35,8 +38,27 @@ class _RouteDetailPageState extends State<RouteDetailPage> {
     final List<dynamic>? coords = widget.route["coordinates"];
     if (coords != null && coords.isNotEmpty) {
       coordinates =
-          coords.map((c) => LatLng(c["latitude"], c["longitude"])).toList();
+          coords.map((c) => osm.LatLng(c["latitude"], c["longitude"])).toList();
     }
+  }
+
+  void _openFullMapPreview() {
+    if (coordinates.isEmpty) return;
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => RoutePreviewMapScreen(
+          routePoints: coordinates
+              .map((point) => gmap.LatLng(point.latitude, point.longitude))
+              .toList(),
+          initialCenter: gmap.LatLng(
+            coordinates.first.latitude,
+            coordinates.first.longitude,
+          ),
+        ),
+      ),
+    );
   }
 
   @override
@@ -94,53 +116,66 @@ class _RouteDetailPageState extends State<RouteDetailPage> {
             Text(route["description"] ?? "No description"),
             const SizedBox(height: 8),
             Text(
-                "📅 ${route["date"]?.toString().substring(0, 10) ?? "No date"}"),
+                "\ud83d\uddd3 ${route["date"]?.toString().substring(0, 10) ?? "No date"}"),
           ]),
           const SizedBox(height: 24),
           if (coordinates.isNotEmpty)
             _buildGlassCard([
               SizedBox(
                 height: 250,
-                child: FlutterMap(
-                  options: MapOptions(
-                    initialCenter: coordinates.first,
-                    initialZoom: 13,
-                    interactionOptions: const InteractionOptions(
-                      flags: InteractiveFlag.none,
-                    ),
-                  ),
+                child: Stack(
                   children: [
-                    TileLayer(
-                      urlTemplate:
-                          'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                    ),
-                    MarkerLayer(
-                      markers: coordinates
-                          .map((point) => Marker(
-                                point: point,
-                                width: 40,
-                                height: 40,
-                                child: const Icon(
-                                  Icons.location_on,
-                                  color: Colors.red,
-                                  size: 30,
-                                ),
-                              ))
-                          .toList(),
-                    ),
-                    PolylineLayer(
-                      polylines: [
-                        Polyline(
-                          points: coordinates,
-                          strokeWidth: 4.0,
-                          color: Colors.blue,
+                    FlutterMap(
+                      options: MapOptions(
+                        initialCenter: coordinates.first,
+                        initialZoom: 17,
+                        interactionOptions: const InteractionOptions(
+                          flags: InteractiveFlag.none,
+                        ),
+                      ),
+                      children: [
+                        TileLayer(
+                          urlTemplate:
+                              'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                        ),
+                        MarkerLayer(
+                          markers: coordinates
+                              .map((point) => Marker(
+                                    point: point,
+                                    width: 40,
+                                    height: 40,
+                                    child: const Icon(
+                                      Icons.location_on,
+                                      color: Colors.red,
+                                      size: 30,
+                                    ),
+                                  ))
+                              .toList(),
+                        ),
+                        PolylineLayer(
+                          polylines: [
+                            Polyline(
+                              points: coordinates,
+                              strokeWidth: 4.0,
+                              color: Colors.blue,
+                            ),
+                          ],
                         ),
                       ],
                     ),
+                    // 👇 Tıklamayı yakalayan görünmez katman
+                    Positioned.fill(
+                      child: Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          onTap: _openFullMapPreview,
+                        ),
+                      ),
+                    )
                   ],
                 ),
               )
-            ]),
+            ])
         ],
       ),
     );

@@ -91,97 +91,112 @@ class _SearchPageState extends State<SearchPage> {
             ),
             const SizedBox(height: 20),
             Expanded(
-              child: _searchController.text.isEmpty
-                  ? const Center(
-                      child: Text(
-                        "Bir şeyler yazın...",
-                        style: TextStyle(color: Colors.white54),
-                      ),
-                    )
-                  : filteredRoutes.isEmpty
-                      ? const Center(
-                          child: Text(
-                            "Sonuç bulunamadı.",
-                            style: TextStyle(color: Colors.white54),
-                          ),
-                        )
-                      : ListView.builder(
-                          itemCount: filteredRoutes.length,
-                          itemBuilder: (context, index) {
-                            final route = filteredRoutes[index];
-                            final imageUrl = (route['images'] != null &&
-                                    route['images'].isNotEmpty)
-                                ? '$baseUrl${route['images'][0]['image']}'
-                                : 'assets/png/default.png';
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 400),
+                transitionBuilder: (child, animation) {
+                  final offsetAnimation = Tween<Offset>(
+                    begin: const Offset(1, 0), // sağdan gelsin
+                    end: Offset.zero,
+                  ).animate(animation);
 
-                            return GestureDetector(
-                              onTap: () => Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) =>
-                                      RouteDetailPage(route: route),
-                                ),
-                              ),
-                              child: Container(
-                                margin: const EdgeInsets.only(bottom: 12),
-                                padding: const EdgeInsets.all(12),
-                                decoration: BoxDecoration(
-                                  color: Colors.white10,
-                                  borderRadius: BorderRadius.circular(16),
-                                ),
-                                child: Row(
-                                  children: [
-                                    ClipRRect(
-                                      borderRadius: BorderRadius.circular(10),
-                                      child: Image.network(
-                                        imageUrl,
-                                        width: 90,
-                                        height: 90,
-                                        fit: BoxFit.cover,
-                                        errorBuilder:
-                                            (context, error, stackTrace) =>
-                                                Image.asset(
-                                                    'assets/png/default.png',
-                                                    width: 90,
-                                                    height: 90),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            route['title'] ?? "Başlıksız",
-                                            style: const TextStyle(
-                                              fontSize: 18,
-                                              fontWeight: FontWeight.bold,
-                                              color: Colors.white,
-                                            ),
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                          const SizedBox(height: 6),
-                                          Text(
-                                            route['description'] ??
-                                                "Açıklama yok",
-                                            style: const TextStyle(
-                                              fontSize: 14,
-                                              color: Colors.white70,
-                                            ),
-                                            maxLines: 2,
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                        ],
-                                      ),
-                                    )
-                                  ],
-                                ),
-                              ),
-                            );
-                          },
+                  return SlideTransition(
+                      position: offsetAnimation, child: child);
+                },
+                child: _searchController.text.isEmpty
+                    ? const Center(
+                        key: ValueKey("empty"),
+                        child: Text(
+                          "Bir şeyler yazın...",
+                          style: TextStyle(color: Colors.white54),
                         ),
+                      )
+                    : filteredRoutes.isEmpty
+                        ? const Center(
+                            key: ValueKey("notfound"),
+                            child: Text(
+                              "Sonuç bulunamadı.",
+                              style: TextStyle(color: Colors.white54),
+                            ),
+                          )
+                        : ListView.builder(
+                            key: const ValueKey("results"),
+                            itemCount: filteredRoutes.length,
+                            itemBuilder: (context, index) {
+                              final route = filteredRoutes[index];
+                              final imageUrl = (route['images'] != null &&
+                                      route['images'].isNotEmpty)
+                                  ? '$baseUrl${route['images'][0]['image']}'
+                                  : 'assets/png/default.png';
+
+                              return GestureDetector(
+                                onTap: () => Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        RouteDetailPage(route: route),
+                                  ),
+                                ),
+                                child: Container(
+                                  margin: const EdgeInsets.only(bottom: 12),
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white10,
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      ClipRRect(
+                                        borderRadius: BorderRadius.circular(10),
+                                        child: Image.network(
+                                          imageUrl,
+                                          width: 90,
+                                          height: 90,
+                                          fit: BoxFit.cover,
+                                          errorBuilder:
+                                              (context, error, stackTrace) =>
+                                                  Image.asset(
+                                                      'assets/png/default.png',
+                                                      width: 90,
+                                                      height: 90),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              route['title'] ?? "Başlıksız",
+                                              style: const TextStyle(
+                                                fontSize: 18,
+                                                fontWeight: FontWeight.bold,
+                                                color: Colors.white,
+                                              ),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                            const SizedBox(height: 6),
+                                            Text(
+                                              route['description'] ??
+                                                  "Açıklama yok",
+                                              style: const TextStyle(
+                                                fontSize: 14,
+                                                color: Colors.white70,
+                                              ),
+                                              maxLines: 2,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ],
+                                        ),
+                                      )
+                                    ],
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+              ),
             )
           ],
         ),
