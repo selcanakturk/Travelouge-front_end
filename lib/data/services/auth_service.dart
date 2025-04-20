@@ -42,7 +42,7 @@ class AuthService {
     }
   }
 
-  // 🔐 Giriş işlemi
+  //  Giriş işlemi
   Future<bool> signIn(String username, String password) async {
     final dio = Dio();
 
@@ -62,17 +62,17 @@ class AuthService {
           await prefs.setString('refresh_token', refreshToken);
           await prefs.setString('username', username);
 
-          // 👤 Kullanıcı bilgilerini çek
-          await fetchUserProfile();
+          // Kullanıcı bilgilerini çek ve user_id'yi kaydet
+          await fetchUserProfile(); // İçerisi aşağıda güncelleniyor
 
-          print("✅ Giriş başarılı, token ve kullanıcı bilgileri kaydedildi!");
+          print("Giriş başarılı, token ve kullanıcı bilgileri kaydedildi!");
           return true;
         } else {
-          print("❌ Token bilgileri eksik.");
+          print("Token bilgileri eksik.");
           return false;
         }
       } else {
-        print("❌ Giriş başarısız: ${response.data}");
+        print("Giriş başarısız: ${response.data}");
         return false;
       }
     } catch (e) {
@@ -81,7 +81,7 @@ class AuthService {
     }
   }
 
-  // 👤 Kullanıcı bilgilerini çek ve kaydet
+//  Kullanıcı bilgilerini çek ve user_id dahil kaydet
   Future<void> fetchUserProfile() async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('access_token');
@@ -100,9 +100,14 @@ class AuthService {
       await prefs.setString('first_name', data['first_name'] ?? '');
       await prefs.setString('last_name', data['last_name'] ?? '');
 
-      print("👤 Kullanıcı profil verisi başarıyla kaydedildi");
+      if (data['id'] != null) {
+        await prefs.setInt('user_id', data['id']); //  user_id kaydedildi
+        print("✅ user_id kaydedildi: ${data['id']}");
+      }
+
+      print(" Kullanıcı profil verisi başarıyla kaydedildi");
     } catch (e) {
-      print("❌ Kullanıcı profil verisi alınamadı: $e");
+      print(" Kullanıcı profil verisi alınamadı: $e");
     }
   }
 

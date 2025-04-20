@@ -57,6 +57,9 @@ class _TripsScreenState extends State<TripsScreen> {
       // Asenkron şekilde her rota için konum çözümle
       List<Map<String, dynamic>> routes = [];
       for (var route in data) {
+        if (route["is_deleted"] == true)
+          continue; // silinmiş rotaları dahil etme
+
         String imageUrl = defaultImage;
         if (route["images"] != null &&
             route["images"].isNotEmpty &&
@@ -64,21 +67,16 @@ class _TripsScreenState extends State<TripsScreen> {
           imageUrl = "$baseUrl${route["images"][0]["image"]}";
         }
 
-        // 🗺️ Konum çözümleme
         String location =
             await _getLocationFromCoordinates(route["coordinates"]);
 
-        routes.add({
-          "title": route["title"]?.toString() ?? "Başlıksız",
-          "description": route["description"]?.toString() ?? "Açıklama yok",
-          "location": location,
-          "date": route["created_at"] ?? "",
-          "image": imageUrl,
-          "images": route["images"] ?? [],
-          "coordinates": route["coordinates"] ?? [],
-        });
-      }
+        route["image"] = imageUrl;
+        route["location"] = location;
+        route["date"] = route["created_at"];
+        route["user"] = route["user"] ?? route["user_id"] ?? route["owner"];
 
+        routes.add(route);
+      }
       setState(() {
         userRoutes = routes;
       });

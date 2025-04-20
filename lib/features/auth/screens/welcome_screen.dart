@@ -1,35 +1,89 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:travelouge_frontend/features/auth/screens/sign_in_screen.dart';
 import 'package:travelouge_frontend/features/auth/screens/sign_up_screen.dart';
-
-//import 'home_page.dart'; // HomePage'i dahil ediyoruz
+import 'package:video_player/video_player.dart';
 
 class WelcomeScreen extends StatefulWidget {
   const WelcomeScreen({super.key});
 
   @override
-  _WelcomeScreenState createState() => _WelcomeScreenState();
+  State<WelcomeScreen> createState() => _WelcomeScreenState();
 }
 
-class _WelcomeScreenState extends State<WelcomeScreen> {
+class _WelcomeScreenState extends State<WelcomeScreen>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<Offset> _titleSlide;
+  late Animation<Offset> _subtitleSlide;
+  late Animation<Offset> _buttonSlide;
+
+  late VideoPlayerController _videoController;
+
   @override
   void initState() {
     super.initState();
-    checkLoginStatus(); // Uygulama başlar başlamaz giriş durumu kontrol edilir
+    _initAnimation();
+    _initVideo();
+    _checkLoginStatus();
   }
 
-  Future<void> checkLoginStatus() async {
-    final prefs = await SharedPreferences.getInstance();
-    String? token = prefs.getString('access_token');
+  Future<void> _initVideo() async {
+    _videoController = VideoPlayerController.asset('assets/videos/ucakk.mp4')
+      ..setLooping(false)
+      ..setVolume(0.0)
+      ..setPlaybackSpeed(0.4)
+      ..initialize().then((_) {
+        _videoController.play();
+        setState(() {});
+      });
+  }
 
+  Future<void> _checkLoginStatus() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('access_token');
     if (token != null) {
-      print("🔓 Kullanıcı giriş yapmış, token geçerli: $token");
-      Navigator.pushReplacementNamed(context, '/home'); // Ana sayfaya yönlendir
-    } else {
-      print("🔐 Kullanıcı giriş yapmamış.");
-      // Kullanıcı giriş yapmamışsa, mevcut WelcomeScreen gösterilmeye devam eder
+      Navigator.pushReplacementNamed(context, '/home');
     }
+  }
+
+  void _initAnimation() {
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 1000),
+      vsync: this,
+    );
+
+    _titleSlide =
+        Tween<Offset>(begin: const Offset(0, -1), end: Offset.zero).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeOutBack),
+    );
+
+    _subtitleSlide =
+        Tween<Offset>(begin: const Offset(0, -1.5), end: Offset.zero).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeOutBack),
+    );
+
+    _buttonSlide =
+        Tween<Offset>(begin: const Offset(0, 1.5), end: Offset.zero).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeOutBack),
+    );
+
+    _controller.forward();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Bu sayfa tekrar görünür olduğunda animasyonu başlat
+    _controller.forward();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    _videoController.dispose();
+    super.dispose();
   }
 
   @override
@@ -39,35 +93,44 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
       body: Stack(
         fit: StackFit.expand,
         children: [
-          Image.asset(
-            'assets/png/login_screen.png', // Arka plan resmi
-            fit: BoxFit.cover,
-          ),
-          Container(
-            color: Colors.black.withAlpha(128), // %50 opacity
-          ),
+          if (_videoController.value.isInitialized)
+            FittedBox(
+              fit: BoxFit.cover,
+              child: SizedBox(
+                width: _videoController.value.size.width,
+                height: _videoController.value.size.height,
+                child: VideoPlayer(_videoController),
+              ),
+            ),
+          Container(color: Colors.black.withOpacity(0.5)),
           Padding(
             padding: const EdgeInsets.all(20.0),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                const Text(
-                  "TRAVELOUGE",
-                  style: TextStyle(
-                    fontSize: 32,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                    letterSpacing: 2,
+                SlideTransition(
+                  position: _titleSlide,
+                  child: const Text(
+                    "TRAVELOUGE",
+                    style: TextStyle(
+                      fontSize: 32,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                      letterSpacing: 2,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 10),
-                const Text(
-                  "Explore your journeys",
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                SlideTransition(
+                  position: _subtitleSlide,
+                  child: const Text(
+                    "Explore your journeys",
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 5),
@@ -77,9 +140,15 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                   style: TextStyle(fontSize: 16, color: Colors.white70),
                 ),
                 const SizedBox(height: 40),
-                _buildButton(context, "SIGN UP", const SignUpPage()),
+                SlideTransition(
+                  position: _buttonSlide,
+                  child: _buildButton("SIGN UP", const SignUpPage()),
+                ),
                 const SizedBox(height: 10),
-                _buildButton(context, "SIGN IN", const SignInPage()),
+                SlideTransition(
+                  position: _buttonSlide,
+                  child: _buildButton("SIGN IN", const SignInPage()),
+                ),
               ],
             ),
           ),
@@ -88,7 +157,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     );
   }
 
-  Widget _buildButton(BuildContext context, String text, Widget page) {
+  Widget _buildButton(String text, Widget page) {
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton(
@@ -97,9 +166,18 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
           side: const BorderSide(color: Colors.white),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         ),
-        onPressed: () {
-          Navigator.push(
-              context, MaterialPageRoute(builder: (context) => page));
+        onPressed: () async {
+          await Navigator.push(
+            context,
+            PageRouteBuilder(
+              pageBuilder: (_, __, ___) => page,
+              transitionsBuilder: (_, anim, __, child) =>
+                  FadeTransition(opacity: anim, child: child),
+            ),
+          );
+          // Sayfadan dönüldüğünde animasyonu yeniden başlat
+          _controller.reset();
+          _controller.forward();
         },
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 12),

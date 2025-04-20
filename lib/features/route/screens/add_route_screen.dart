@@ -49,9 +49,56 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
     final List<XFile>? pickedFiles = await picker.pickMultiImage();
     if (pickedFiles != null) {
       setState(() {
-        _images = pickedFiles;
+        _images.addAll(pickedFiles);
       });
     }
+  }
+
+  void _showImagePreview(int initialIndex) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          child: AspectRatio(
+            aspectRatio: 4 / 3,
+            child: Stack(
+              children: [
+                PageView.builder(
+                  itemCount: _images.length,
+                  controller: PageController(initialPage: initialIndex),
+                  itemBuilder: (context, index) {
+                    return ClipRRect(
+                      borderRadius: BorderRadius.circular(16),
+                      child: Image.file(
+                        File(_images[index].path),
+                        fit: BoxFit.contain,
+                      ),
+                    );
+                  },
+                ),
+                Positioned(
+                  top: 8,
+                  right: 8,
+                  child: IconButton(
+                    icon: const Icon(Icons.close, color: Colors.white),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                )
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _removeImage(int index) {
+    setState(() {
+      _images.removeAt(index);
+    });
   }
 
   Future<void> submitRoute() async {
@@ -103,7 +150,6 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
       setState(() {
         _routePoints = result;
 
-        // mini harita kontrolcüsü varsa kamerayı güncelle
         if (_miniMapController != null && _routePoints.isNotEmpty) {
           _miniMapController!.animateCamera(
             CameraUpdate.newLatLngBounds(
@@ -143,108 +189,177 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
 
     return Scaffold(
       appBar: AppBar(title: const Text("Add New Route")),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              TextField(
-                controller: _titleController,
-                decoration: const InputDecoration(labelText: "Title"),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text("Route Title", style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _titleController,
+              decoration: const InputDecoration(
+                hintText: "Enter route title",
+                border: OutlineInputBorder(),
               ),
-              TextField(
-                controller: _descriptionController,
-                decoration: const InputDecoration(labelText: "Description"),
+            ),
+            const SizedBox(height: 20),
+            Text("Description", style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _descriptionController,
+              maxLines: 3,
+              decoration: const InputDecoration(
+                hintText: "Describe your journey...",
+                border: OutlineInputBorder(),
               ),
-              const SizedBox(height: 20),
-              GestureDetector(
-                onTap: _openFullMap,
-                child: Container(
-                  height: 200,
-                  margin: const EdgeInsets.only(bottom: 16),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.white24),
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: Stack(
-                      children: [
-                        GoogleMap(
-                          initialCameraPosition: CameraPosition(
-                            target: center,
-                            zoom: 13,
-                          ),
-                          onMapCreated: (controller) {
-                            _miniMapController = controller;
-                            if (_routePoints.isNotEmpty) {
-                              controller.animateCamera(
-                                CameraUpdate.newLatLngBounds(
-                                  _boundsFromLatLngList(_routePoints),
-                                  50,
-                                ),
-                              );
-                            }
-                          },
-                          markers: _routePoints
-                              .map((point) => Marker(
-                                    markerId: MarkerId(point.toString()),
-                                    position: point,
-                                  ))
-                              .toSet(),
-                          polylines: {
-                            if (_routePoints.length >= 2)
-                              Polyline(
-                                polylineId: const PolylineId('route'),
-                                color: Colors.blue,
-                                width: 4,
-                                points: _routePoints,
+            ),
+            const SizedBox(height: 24),
+            Text("Route Map", style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: 8),
+            GestureDetector(
+              onTap: _openFullMap,
+              child: Container(
+                height: 180,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.white24),
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: Stack(
+                    children: [
+                      GoogleMap(
+                        initialCameraPosition: CameraPosition(
+                          target: center,
+                          zoom: 13,
+                        ),
+                        onMapCreated: (controller) {
+                          _miniMapController = controller;
+                          if (_routePoints.isNotEmpty) {
+                            controller.animateCamera(
+                              CameraUpdate.newLatLngBounds(
+                                _boundsFromLatLngList(_routePoints),
+                                50,
                               ),
-                          },
-                          myLocationEnabled: true,
-                          zoomControlsEnabled: false,
-                          onTap: (_) {},
-                          gestureRecognizers:
-                              <Factory<OneSequenceGestureRecognizer>>{}.toSet(),
-                        ),
-                        Positioned.fill(
-                          child: Container(
-                            color: Colors.transparent,
-                            child: InkWell(
-                              onTap: _openFullMap,
+                            );
+                          }
+                        },
+                        markers: _routePoints
+                            .map((point) => Marker(
+                                  markerId: MarkerId(point.toString()),
+                                  position: point,
+                                ))
+                            .toSet(),
+                        polylines: {
+                          if (_routePoints.length >= 2)
+                            Polyline(
+                              polylineId: const PolylineId('route'),
+                              color: Colors.blue,
+                              width: 4,
+                              points: _routePoints,
                             ),
-                          ),
+                        },
+                        myLocationEnabled: true,
+                        zoomControlsEnabled: false,
+                        onTap: (_) {},
+                        gestureRecognizers:
+                            <Factory<OneSequenceGestureRecognizer>>{}.toSet(),
+                      ),
+                      Positioned.fill(
+                        child: Container(
+                          color: Colors.transparent,
+                          child: InkWell(onTap: _openFullMap),
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ),
               ),
-              ElevatedButton(
-                onPressed: pickImages,
-                child: const Text("📷 Select Photos"),
+            ),
+            const SizedBox(height: 24),
+            Text("Photos", style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: 8),
+            TextButton.icon(
+              onPressed: pickImages,
+              icon: const Icon(Icons.photo, color: Colors.purple),
+              label: const Text(
+                "Select Photos",
+                style: TextStyle(
+                  color: Colors.purple,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
-              const SizedBox(height: 10),
-              _images.isNotEmpty
-                  ? Wrap(
-                      spacing: 8,
-                      children: _images
-                          .map((image) => Image.file(
-                                File(image.path),
-                                width: 100,
-                                height: 100,
-                              ))
-                          .toList(),
-                    )
-                  : const Text("No photos selected yet."),
-              const SizedBox(height: 20),
-              ElevatedButton(
+              style: TextButton.styleFrom(
+                backgroundColor:
+                    Colors.white.withOpacity(0.1), // 👈 Şeffaf beyaz zemin
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
+            _images.isNotEmpty
+                ? Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: List.generate(
+                      _images.length,
+                      (index) => Stack(
+                        children: [
+                          GestureDetector(
+                            onTap: () => _showImagePreview(index),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(12),
+                              child: Image.file(
+                                File(_images[index].path),
+                                width: 160,
+                                height: 160,
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                          ),
+                          Positioned(
+                            top: 4,
+                            right: 4,
+                            child: Container(
+                              decoration: const BoxDecoration(
+                                color: Colors.black54,
+                                shape: BoxShape.circle,
+                              ),
+                              child: IconButton(
+                                padding: EdgeInsets.zero,
+                                icon: const Icon(Icons.close,
+                                    size: 18, color: Colors.white),
+                                onPressed: () => _removeImage(index),
+                              ),
+                            ),
+                          )
+                        ],
+                      ),
+                    ),
+                  )
+                : const Text("No photos selected yet."),
+            const SizedBox(height: 30),
+            Center(
+              child: ElevatedButton.icon(
                 onPressed: submitRoute,
-                child: const Text("✅ Add Route"),
+                icon: const Icon(Icons.check),
+                label: const Text("Add Route"),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.purple,
+                  foregroundColor: Colors.white,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20)),
+                ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

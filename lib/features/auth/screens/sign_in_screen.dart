@@ -24,8 +24,7 @@ class _SignInPageState extends State<SignInPage> {
       Navigator.pushReplacementNamed(context, '/home');
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text("Giriş başarısız! Lütfen tekrar deneyin.")),
+        const SnackBar(content: Text("Login failed! Please try again.")),
       );
     }
   }
@@ -49,7 +48,7 @@ class _SignInPageState extends State<SignInPage> {
               ),
               const SizedBox(height: 24),
               const Text(
-                "Merhaba, tekrar hoş geldiniz",
+                "Hello, welcome back",
                 style: TextStyle(
                   fontSize: 26,
                   fontWeight: FontWeight.bold,
@@ -57,21 +56,21 @@ class _SignInPageState extends State<SignInPage> {
                 ),
               ),
               const SizedBox(height: 32),
-              const Text("Kullanıcı Adı",
+              const Text("Username",
                   style: TextStyle(color: Colors.white70, fontSize: 14)),
               const SizedBox(height: 8),
-              _buildTextField("Kullanıcı Adı", _usernameController),
+              _buildTextField("Enter your username", _usernameController),
               const SizedBox(height: 20),
-              const Text("Parola",
+              const Text("Password",
                   style: TextStyle(color: Colors.white70, fontSize: 14)),
               const SizedBox(height: 8),
-              _buildPasswordField("Parola", _passwordController),
+              _buildPasswordField("Enter your password", _passwordController),
               const SizedBox(height: 12),
               Align(
                 alignment: Alignment.centerRight,
                 child: TextButton(
                   onPressed: () {},
-                  child: const Text("Parolanızı mı unuttunuz?",
+                  child: const Text("Forgot your password?",
                       style: TextStyle(color: Colors.white)),
                 ),
               ),
@@ -88,7 +87,7 @@ class _SignInPageState extends State<SignInPage> {
                     ),
                   ),
                   child: const Text(
-                    "Haydi başlayalım",
+                    "Let's get started",
                     style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
