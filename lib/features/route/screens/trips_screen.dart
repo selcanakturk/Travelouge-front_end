@@ -166,13 +166,18 @@ class _TripsScreenState extends State<TripsScreen> {
     final bool isNetwork = imageUrl.startsWith("http");
 
     return GestureDetector(
-      onTap: () {
-        Navigator.push(
+      onTap: () async {
+        final result = await Navigator.push(
           context,
           MaterialPageRoute(
             builder: (context) => RouteDetailPage(route: route),
           ),
         );
+
+// ✅ Eğer rota silindiyse yeniden fetch et
+        if (result == true) {
+          fetchUserRoutes();
+        }
       },
       child: ClipRRect(
         borderRadius: BorderRadius.circular(20),

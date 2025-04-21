@@ -10,6 +10,10 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:travelouge_frontend/features/route/screens/full_map_route_screen.dart';
 
 class AddRouteScreen extends StatefulWidget {
+  final Map<String, dynamic>? existingRoute;
+
+  const AddRouteScreen({super.key, this.existingRoute});
+
   @override
   _AddRouteScreenState createState() => _AddRouteScreenState();
 }
@@ -18,6 +22,8 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
   List<XFile> _images = [];
+  List<Map<String, dynamic>> _networkImages = [];
+  List<int> deletedImageIds = [];
   final RouteService _routeService = RouteService();
 
   List<LatLng> _routePoints = [];
@@ -26,10 +32,31 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
 
   final LatLng _fallbackCenter = const LatLng(41.0082, 28.9784);
 
+  bool get isEditMode => widget.existingRoute != null;
+
   @override
   void initState() {
     super.initState();
     _getCurrentLocation();
+
+    if (isEditMode) {
+      final route = widget.existingRoute!;
+      _titleController.text = route['title'] ?? '';
+      _descriptionController.text = route['description'] ?? '';
+      if (route['coordinates'] != null) {
+        _routePoints = List.from(route['coordinates'])
+            .map((c) => LatLng(c['latitude'], c['longitude']))
+            .toList();
+      }
+      if (route['images'] != null) {
+        _networkImages = List.from(route['images'])
+            .map((img) => {
+                  "id": img['id'],
+                  "url": "http://127.0.0.1:8000${img['image']}"
+                })
+            .toList();
+      }
+    }
   }
 
   Future<void> _getCurrentLocation() async {
@@ -54,55 +81,20 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
     }
   }
 
-  void _showImagePreview(int initialIndex) {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return Dialog(
-          backgroundColor: Colors.transparent,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          child: AspectRatio(
-            aspectRatio: 4 / 3,
-            child: Stack(
-              children: [
-                PageView.builder(
-                  itemCount: _images.length,
-                  controller: PageController(initialPage: initialIndex),
-                  itemBuilder: (context, index) {
-                    return ClipRRect(
-                      borderRadius: BorderRadius.circular(16),
-                      child: Image.file(
-                        File(_images[index].path),
-                        fit: BoxFit.contain,
-                      ),
-                    );
-                  },
-                ),
-                Positioned(
-                  top: 8,
-                  right: 8,
-                  child: IconButton(
-                    icon: const Icon(Icons.close, color: Colors.white),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                )
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  void _removeImage(int index) {
+  void _removeImage(int index, {bool isNetwork = false}) {
     setState(() {
-      _images.removeAt(index);
+      if (isNetwork) {
+        deletedImageIds.add(_networkImages[index]['id']);
+        _networkImages.removeAt(index);
+      } else {
+        _images.removeAt(index);
+      }
     });
   }
 
   Future<void> submitRoute() async {
-    if (_titleController.text.isEmpty || _images.isEmpty) {
+    if (_titleController.text.isEmpty ||
+        (_images.isEmpty && _networkImages.isEmpty && !isEditMode)) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
             content:
@@ -116,23 +108,53 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
             {"latitude": point.latitude, "longitude": point.longitude})
         .toList();
 
-    bool success = await _routeService.addRoute(
-      _titleController.text,
-      _descriptionController.text,
-      _images,
-      routeCoords,
-    );
+    bool success;
+    if (isEditMode) {
+      success = await _routeService.updateRoute(
+        widget.existingRoute!["id"],
+        _titleController.text,
+        _descriptionController.text,
+        _images,
+        routeCoords,
+        deletedImageIds,
+      );
+    } else {
+      success = await _routeService.addRoute(
+        _titleController.text,
+        _descriptionController.text,
+        _images,
+        routeCoords,
+      );
+    }
 
     if (success) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("✅ Route added successfully")),
+        SnackBar(
+            content: Text(
+                isEditMode ? "✅ Route updated" : "✅ Route added successfully")),
       );
       Navigator.pop(context);
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("❌ Failed to add route")),
+        const SnackBar(content: Text("❌ Failed to save route")),
       );
     }
+  }
+
+  LatLngBounds _boundsFromLatLngList(List<LatLng> list) {
+    double x0 = list.first.latitude;
+    double x1 = list.first.latitude;
+    double y0 = list.first.longitude;
+    double y1 = list.first.longitude;
+
+    for (LatLng latLng in list) {
+      if (latLng.latitude > x1) x1 = latLng.latitude;
+      if (latLng.latitude < x0) x0 = latLng.latitude;
+      if (latLng.longitude > y1) y1 = latLng.longitude;
+      if (latLng.longitude < y0) y0 = latLng.longitude;
+    }
+
+    return LatLngBounds(southwest: LatLng(x0, y0), northeast: LatLng(x1, y1));
   }
 
   void _openFullMap() async {
@@ -162,25 +184,6 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
     }
   }
 
-  LatLngBounds _boundsFromLatLngList(List<LatLng> list) {
-    double x0 = list.first.latitude;
-    double x1 = list.first.latitude;
-    double y0 = list.first.longitude;
-    double y1 = list.first.longitude;
-
-    for (LatLng latLng in list) {
-      if (latLng.latitude > x1) x1 = latLng.latitude;
-      if (latLng.latitude < x0) x0 = latLng.latitude;
-      if (latLng.longitude > y1) y1 = latLng.longitude;
-      if (latLng.longitude < y0) y0 = latLng.longitude;
-    }
-
-    return LatLngBounds(
-      southwest: LatLng(x0, y0),
-      northeast: LatLng(x1, y1),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final LatLng center = _routePoints.isNotEmpty
@@ -188,7 +191,7 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
         : (_currentLocation ?? _fallbackCenter);
 
     return Scaffold(
-      appBar: AppBar(title: const Text("Add New Route")),
+      appBar: AppBar(title: Text(isEditMode ? "Edit Route" : "Add New Route")),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -227,52 +230,40 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
                 ),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(12),
-                  child: Stack(
-                    children: [
-                      GoogleMap(
-                        initialCameraPosition: CameraPosition(
-                          target: center,
-                          zoom: 13,
+                  child: GoogleMap(
+                    initialCameraPosition:
+                        CameraPosition(target: center, zoom: 13),
+                    onMapCreated: (controller) {
+                      _miniMapController = controller;
+                      if (_routePoints.isNotEmpty) {
+                        controller.animateCamera(
+                          CameraUpdate.newLatLngBounds(
+                            _boundsFromLatLngList(_routePoints),
+                            50,
+                          ),
+                        );
+                      }
+                    },
+                    markers: _routePoints
+                        .map((point) => Marker(
+                              markerId: MarkerId(point.toString()),
+                              position: point,
+                            ))
+                        .toSet(),
+                    polylines: {
+                      if (_routePoints.length >= 2)
+                        Polyline(
+                          polylineId: const PolylineId('route'),
+                          color: Colors.blue,
+                          width: 4,
+                          points: _routePoints,
                         ),
-                        onMapCreated: (controller) {
-                          _miniMapController = controller;
-                          if (_routePoints.isNotEmpty) {
-                            controller.animateCamera(
-                              CameraUpdate.newLatLngBounds(
-                                _boundsFromLatLngList(_routePoints),
-                                50,
-                              ),
-                            );
-                          }
-                        },
-                        markers: _routePoints
-                            .map((point) => Marker(
-                                  markerId: MarkerId(point.toString()),
-                                  position: point,
-                                ))
-                            .toSet(),
-                        polylines: {
-                          if (_routePoints.length >= 2)
-                            Polyline(
-                              polylineId: const PolylineId('route'),
-                              color: Colors.blue,
-                              width: 4,
-                              points: _routePoints,
-                            ),
-                        },
-                        myLocationEnabled: true,
-                        zoomControlsEnabled: false,
-                        onTap: (_) {},
-                        gestureRecognizers:
-                            <Factory<OneSequenceGestureRecognizer>>{}.toSet(),
-                      ),
-                      Positioned.fill(
-                        child: Container(
-                          color: Colors.transparent,
-                          child: InkWell(onTap: _openFullMap),
-                        ),
-                      ),
-                    ],
+                    },
+                    myLocationEnabled: true,
+                    zoomControlsEnabled: false,
+                    onTap: (_) {},
+                    gestureRecognizers:
+                        <Factory<OneSequenceGestureRecognizer>>{}.toSet(),
                   ),
                 ),
               ),
@@ -292,8 +283,7 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
                 ),
               ),
               style: TextButton.styleFrom(
-                backgroundColor:
-                    Colors.white.withOpacity(0.1), // 👈 Şeffaf beyaz zemin
+                backgroundColor: Colors.white.withOpacity(0.1),
                 padding:
                     const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                 shape: RoundedRectangleBorder(
@@ -302,45 +292,79 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
               ),
             ),
             const SizedBox(height: 10),
-            _images.isNotEmpty
+            _networkImages.isNotEmpty || _images.isNotEmpty
                 ? Wrap(
                     spacing: 8,
                     runSpacing: 8,
-                    children: List.generate(
-                      _images.length,
-                      (index) => Stack(
-                        children: [
-                          GestureDetector(
-                            onTap: () => _showImagePreview(index),
-                            child: ClipRRect(
+                    children: [
+                      ..._networkImages.asMap().entries.map((entry) {
+                        int index = entry.key;
+                        String url = entry.value['url'];
+                        return Stack(
+                          children: [
+                            ClipRRect(
                               borderRadius: BorderRadius.circular(12),
-                              child: Image.file(
-                                File(_images[index].path),
+                              child: Image.network(
+                                url,
                                 width: 160,
                                 height: 160,
                                 fit: BoxFit.cover,
                               ),
                             ),
-                          ),
-                          Positioned(
-                            top: 4,
-                            right: 4,
-                            child: Container(
-                              decoration: const BoxDecoration(
-                                color: Colors.black54,
-                                shape: BoxShape.circle,
+                            Positioned(
+                              top: 4,
+                              right: 4,
+                              child: Container(
+                                decoration: const BoxDecoration(
+                                  color: Colors.black54,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: IconButton(
+                                  padding: EdgeInsets.zero,
+                                  icon: const Icon(Icons.close,
+                                      size: 18, color: Colors.white),
+                                  onPressed: () =>
+                                      _removeImage(index, isNetwork: true),
+                                ),
                               ),
-                              child: IconButton(
-                                padding: EdgeInsets.zero,
-                                icon: const Icon(Icons.close,
-                                    size: 18, color: Colors.white),
-                                onPressed: () => _removeImage(index),
+                            )
+                          ],
+                        );
+                      }),
+                      ..._images.asMap().entries.map((entry) {
+                        int index = entry.key;
+                        XFile image = entry.value;
+                        return Stack(
+                          children: [
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(12),
+                              child: Image.file(
+                                File(image.path),
+                                width: 160,
+                                height: 160,
+                                fit: BoxFit.cover,
                               ),
                             ),
-                          )
-                        ],
-                      ),
-                    ),
+                            Positioned(
+                              top: 4,
+                              right: 4,
+                              child: Container(
+                                decoration: const BoxDecoration(
+                                  color: Colors.black54,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: IconButton(
+                                  padding: EdgeInsets.zero,
+                                  icon: const Icon(Icons.close,
+                                      size: 18, color: Colors.white),
+                                  onPressed: () => _removeImage(index),
+                                ),
+                              ),
+                            )
+                          ],
+                        );
+                      })
+                    ],
                   )
                 : const Text("No photos selected yet."),
             const SizedBox(height: 30),
@@ -348,7 +372,7 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
               child: ElevatedButton.icon(
                 onPressed: submitRoute,
                 icon: const Icon(Icons.check),
-                label: const Text("Add Route"),
+                label: Text(isEditMode ? "Save" : "Add Route"),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.purple,
                   foregroundColor: Colors.white,

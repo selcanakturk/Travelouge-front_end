@@ -5,7 +5,9 @@ import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart' as osm;
 import 'package:google_maps_flutter/google_maps_flutter.dart' as gmap;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:travelouge_frontend/features/route/screens/add_route_screen.dart';
 import 'route_preview_map_screen.dart';
+import 'package:travelouge_frontend/widget/custom_snackbar.dart';
 
 class RouteDetailPage extends StatefulWidget {
   final Map<String, dynamic> route;
@@ -125,27 +127,88 @@ class _RouteDetailPageState extends State<RouteDetailPage> {
     );
   }
 
-  void _editRoute() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Edit functionality coming soon")),
+  void _editRoute() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => AddRouteScreen(existingRoute: widget.route),
+      ),
     );
+
+    if (mounted) {
+      setState(() {
+        _loadData();
+      });
+    }
   }
 
   void _deleteRoute() async {
     final confirm = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text("Rota Silinsin mi?"),
-        content: const Text("Bu işlemi geri alamazsın."),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text("Vazgeç")),
-          TextButton(
-              onPressed: () => Navigator.pop(context, true),
-              child: const Text("Sil")),
-        ],
-      ),
+      barrierDismissible: false,
+      builder: (context) {
+        return Dialog(
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          backgroundColor: Colors.grey[900],
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  "Delete this route?",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                const Text(
+                  "This action cannot be undone.",
+                  style: TextStyle(color: Colors.white70, fontSize: 14),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 20),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextButton(
+                        onPressed: () => Navigator.pop(context, false),
+                        style: TextButton.styleFrom(
+                          backgroundColor: Colors.white12,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: const Text("Cancel",
+                            style: TextStyle(color: Colors.white)),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: TextButton(
+                        onPressed: () => Navigator.pop(context, true),
+                        style: TextButton.styleFrom(
+                          backgroundColor: Colors.redAccent,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: const Text("Delete",
+                            style: TextStyle(color: Colors.white)),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
 
     if (confirm != true) return;
@@ -166,18 +229,24 @@ class _RouteDetailPageState extends State<RouteDetailPage> {
 
       if (response.statusCode == 204 || response.statusCode == 200) {
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("✅ Rota silindi")),
+          showCustomSnackbar(
+            context: context,
+            message: "Route successfully deleted",
+            backgroundColor: Colors.redAccent.withOpacity(0.9),
+            icon: Icons.delete_outline,
           );
-          Navigator.pop(context);
+          Navigator.pop(context, true);
         }
       } else {
-        throw Exception("Silme başarısız");
+        throw Exception("Delete Error");
       }
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("❌ Silme hatası: $e")),
+        showCustomSnackbar(
+          context: context,
+          message: "Delete Error",
+          backgroundColor: Colors.redAccent.withOpacity(0.9),
+          icon: Icons.delete_outline,
         );
       }
     }
@@ -186,6 +255,9 @@ class _RouteDetailPageState extends State<RouteDetailPage> {
   @override
   Widget build(BuildContext context) {
     final route = widget.route;
+    final rawDate = route["created_at"];
+    final String formattedDate =
+        rawDate != null ? rawDate.toString().substring(0, 10) : "No date";
 
     return Scaffold(
       appBar: AppBar(
@@ -268,7 +340,7 @@ class _RouteDetailPageState extends State<RouteDetailPage> {
           const SizedBox(height: 20),
           Center(
             child: Text(
-              "\u{1F4C5} ${route["date"]?.toString().substring(0, 10) ?? "No date"}",
+              "\u{1F4C5} $formattedDate",
               style: const TextStyle(color: Colors.white70, fontSize: 14),
             ),
           ),

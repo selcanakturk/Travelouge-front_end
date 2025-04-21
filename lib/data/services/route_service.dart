@@ -21,13 +21,6 @@ class RouteService {
       'Authorization': 'Bearer $token',
     };
 
-    // 📌 Verileri logla
-    print("📤 Gönderilecek Başlık: $title");
-    print("📤 Gönderilecek Açıklama: $description");
-    print(
-        "📤 Gönderilecek Resimler: ${images.map((image) => image.path).toList()}");
-    print("📤 Gönderilecek Koordinatlar: $routeCoords");
-
     FormData formData = FormData.fromMap({
       "title": title.isEmpty ? 'Untitled' : title,
       "description": description,
@@ -49,22 +42,72 @@ class RouteService {
         ),
       );
 
-      print("📥 API Yanıtı: ${response.statusCode} - ${response.data}");
-
       if (response.statusCode == 201) {
-        print("✅ Rota başarıyla eklendi!");
         return true;
       } else {
-        print("❌ Rota ekleme başarısız: ${response.data}");
         return false;
       }
     } catch (e) {
-      if (e is DioException) {
-        print(
-            "❌ DioException Hata: ${e.response?.statusCode} - ${e.response?.data}");
+      return false;
+    }
+  }
+
+  Future<bool> updateRoute(
+    int routeId,
+    String title,
+    String description,
+    List<XFile> images,
+    List<Map<String, double>> routeCoords,
+    List<int> deletedImageIds,
+  ) async {
+    final prefs = await SharedPreferences.getInstance();
+    String? token = prefs.getString('access_token');
+
+    if (token == null) {
+      print("⚠️ Token bulunamadı, giriş yapmalısınız!");
+      return false;
+    }
+
+    final dio = Dio();
+    dio.options.headers = {
+      'Authorization': 'Bearer $token',
+    };
+
+    FormData formData = FormData.fromMap({
+      "title": title.isEmpty ? 'Untitled' : title,
+      "description": description,
+      "coordinates": jsonEncode(routeCoords),
+      "deleted_image_ids": jsonEncode(deletedImageIds),
+      if (images.isNotEmpty)
+        "images": await Future.wait(images.map((image) async {
+          return await MultipartFile.fromFile(image.path, filename: image.name);
+        }).toList()),
+    });
+
+    try {
+      final response = await dio.patch(
+        "$baseUrl/routes/$routeId/",
+        data: formData,
+        options: Options(
+          headers: {
+            "Authorization": "Bearer $token",
+            "Content-Type": "multipart/form-data",
+          },
+        ),
+      );
+
+      print("📥 Update response: ${response.statusCode} - ${response.data}");
+
+      if (response.statusCode == 200) {
+        print("✅ Rota başarıyla güncellendi.");
+        return true;
       } else {
-        print("❌ Genel Hata: $e");
+        print(
+            "❌ Güncelleme başarısız: ${response.statusCode} - ${response.data}");
+        return false;
       }
+    } catch (e) {
+      print("⚠️ Güncelleme hatası: $e");
       return false;
     }
   }
@@ -74,7 +117,6 @@ class RouteService {
     final token = prefs.getString('access_token');
 
     if (token == null) {
-      print("❌ Token bulunamadı, giriş yapmalısınız.");
       return [];
     }
 
@@ -89,16 +131,12 @@ class RouteService {
         ),
       );
 
-      print("📥 Kullanıcının rotaları: ${response.data}");
-
       if (response.statusCode == 200) {
         return response.data;
       } else {
-        print("❌ Rota çekme başarısız: ${response.data}");
         return [];
       }
     } catch (e) {
-      print("⚠️ Rota çekilirken hata: $e");
       return [];
     }
   }
@@ -108,7 +146,6 @@ class RouteService {
     final token = prefs.getString('access_token');
 
     if (token == null) {
-      print("❌ Token bulunamadı.");
       return false;
     }
 
@@ -125,14 +162,11 @@ class RouteService {
       );
 
       if (response.statusCode == 204) {
-        print("✅ Rota başarıyla silindi!");
         return true;
       } else {
-        print("❌ Silme başarısız: ${response.statusCode} - ${response.data}");
         return false;
       }
     } catch (e) {
-      print("⚠️ Silme hatası: $e");
       return false;
     }
   }
