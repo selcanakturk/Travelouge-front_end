@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:travelouge_frontend/core/constants/config.dart';
 import 'package:travelouge_frontend/features/route/screens/add_route_screen.dart';
 import 'package:travelouge_frontend/features/route/screens/route_detail_screen.dart';
 import 'package:intl/intl.dart';
@@ -18,22 +19,25 @@ class TripsScreen extends StatefulWidget {
 class _TripsScreenState extends State<TripsScreen> {
   List<Map<String, dynamic>> userRoutes = [];
   final String defaultImage = 'assets/png/default.png';
+  String fullName = "";
+  String username = "";
+  String bio = "";
+  String? profilePictureUrl = '';
 
   @override
   void initState() {
     super.initState();
+    fetchUserProfile();
     fetchUserRoutes();
   }
 
   String formatDate(dynamic rawDate) {
     try {
       if (rawDate == null || rawDate.toString().isEmpty) return "Tarih yok";
-
       final dateTime = DateTime.tryParse(rawDate.toString());
       if (dateTime == null) return "Tarih yok";
-
-      final localDate = dateTime.toLocal(); // 🔁 UTC -> yerel saat dilimi
-      final formatter = DateFormat('d MMMM y', 'tr_TR'); // örn: 16 Nisan 2025
+      final localDate = dateTime.toLocal();
+      final formatter = DateFormat('d MMMM y', 'tr_TR');
       return formatter.format(localDate);
     } catch (e) {
       print("📅 Tarih formatlama hatası: $e");
@@ -41,35 +45,65 @@ class _TripsScreenState extends State<TripsScreen> {
     }
   }
 
-  Future<void> fetchUserRoutes() async {
+  Future<void> fetchUserProfile() async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('access_token');
-    const baseUrl = 'http://127.0.0.1:8000';
 
     try {
       final response = await dio.get(
-        '$baseUrl/api/routes/',
+        '${Config.baseUrl}/profile/',
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+
+      setState(() {
+        fullName =
+            "${response.data['first_name']} ${response.data['last_name']}";
+        username = response.data['username'];
+        bio = response.data['bio'] ?? "";
+        profilePictureUrl = response.data['profile_picture'];
+        if (profilePictureUrl != null && profilePictureUrl!.isNotEmpty) {
+          if (!profilePictureUrl!.startsWith("http")) {
+            profilePictureUrl = "${Config.baseUrl}$profilePictureUrl";
+          }
+        } else {
+          profilePictureUrl = null;
+        }
+      });
+    } catch (e) {
+      print("❌ Kullanıcı bilgisi alınamadı: $e");
+    }
+  }
+
+  Future<void> fetchUserRoutes() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('access_token');
+
+    try {
+      final response = await dio.get(
+        '${Config.baseUrl}/routes/',
         options: Options(headers: {'Authorization': 'Bearer $token'}),
       );
 
       List<dynamic> data = response.data;
-
-      // Asenkron şekilde her rota için konum çözümle
       List<Map<String, dynamic>> routes = [];
+
       for (var route in data) {
-        if (route["is_deleted"] == true)
-          continue; // silinmiş rotaları dahil etme
+        if (route["is_deleted"] == true) continue;
 
         String imageUrl = defaultImage;
         if (route["images"] != null &&
             route["images"].isNotEmpty &&
             route["images"][0]["image"] != null) {
-          imageUrl = "$baseUrl${route["images"][0]["image"]}";
+          final raw = route["images"][0]["image"].toString();
+          imageUrl = raw.startsWith("http")
+              ? raw
+              : raw.startsWith("/")
+                  ? "${Config.baseUrl}$raw"
+                  : "${Config.baseUrl}/$raw";
         }
 
         String location =
             await _getLocationFromCoordinates(route["coordinates"]);
-
         route["image"] = imageUrl;
         route["location"] = location;
         route["date"] = route["created_at"];
@@ -77,6 +111,7 @@ class _TripsScreenState extends State<TripsScreen> {
 
         routes.add(route);
       }
+
       setState(() {
         userRoutes = routes;
       });
@@ -90,8 +125,7 @@ class _TripsScreenState extends State<TripsScreen> {
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
-        title:
-            const Text("Seyahatlerim", style: TextStyle(color: Colors.white)),
+        title: const Text("Seyahatler", style: TextStyle(color: Colors.white)),
         centerTitle: true,
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -101,21 +135,83 @@ class _TripsScreenState extends State<TripsScreen> {
               context, '/home', (route) => false),
         ),
       ),
-      body: userRoutes.isEmpty
-          ? _buildEmptyState()
-          : GridView.builder(
-              padding: const EdgeInsets.all(16),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                crossAxisSpacing: 12,
-                mainAxisSpacing: 12,
-                childAspectRatio: 0.8,
-              ),
-              itemCount: userRoutes.length,
-              itemBuilder: (context, index) {
-                return _buildRouteCard(userRoutes[index]);
-              },
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(20),
+              color: Colors.white.withOpacity(0.05),
             ),
+            child: Row(
+              children: [
+                CircleAvatar(
+                  radius: 30,
+                  backgroundColor: Colors.grey[800],
+                  backgroundImage:
+                      profilePictureUrl != null && profilePictureUrl!.isNotEmpty
+                          ? NetworkImage(profilePictureUrl!)
+                          : const AssetImage('assets/png/default_profile.png')
+                              as ImageProvider,
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        fullName,
+                        style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 17,
+                            fontWeight: FontWeight.w600),
+                      ),
+                      Text(
+                        '@$username',
+                        style: const TextStyle(
+                            color: Colors.purpleAccent,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w400),
+                      ),
+                      if (bio.isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 6.0),
+                          child: Text(
+                            bio,
+                            style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 15,
+                                fontStyle: FontStyle.italic),
+                          ),
+                        )
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: userRoutes.isEmpty
+                ? _buildEmptyState()
+                : GridView.builder(
+                    padding: const EdgeInsets.all(16),
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      crossAxisSpacing: 12,
+                      mainAxisSpacing: 12,
+                      childAspectRatio: 0.8,
+                    ),
+                    itemCount: userRoutes.length,
+                    itemBuilder: (context, index) {
+                      return _buildRouteCard(userRoutes[index]);
+                    },
+                  ),
+          )
+        ],
+      ),
       floatingActionButton: _buildFloatingButton(),
     );
   }
@@ -174,7 +270,6 @@ class _TripsScreenState extends State<TripsScreen> {
           ),
         );
 
-// ✅ Eğer rota silindiyse yeniden fetch et
         if (result == true) {
           fetchUserRoutes();
         }

@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart' as osm;
 import 'package:google_maps_flutter/google_maps_flutter.dart' as gmap;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:travelouge_frontend/core/constants/config.dart';
 import 'package:travelouge_frontend/features/route/screens/add_route_screen.dart';
 import 'route_preview_map_screen.dart';
 import 'package:travelouge_frontend/widget/custom_snackbar.dart';
@@ -23,7 +24,6 @@ class _RouteDetailPageState extends State<RouteDetailPage> {
   List<osm.LatLng> coordinates = [];
   int currentIndex = 0;
   final String defaultImage = 'assets/png/default.png';
-  final String baseUrl = 'http://127.0.0.1:8000';
   bool isOwner = false;
 
   @override
@@ -35,10 +35,16 @@ class _RouteDetailPageState extends State<RouteDetailPage> {
   Future<void> _loadData() async {
     final List<dynamic>? images = widget.route["images"];
     if (images != null && images.isNotEmpty) {
-      imageUrls = images
-          .map<String>((img) =>
-              img["image"] != null ? "$baseUrl${img["image"]}" : defaultImage)
-          .toList();
+      imageUrls = images.map<String>((img) {
+        final imgUrl = img["image"] ?? '';
+        if (imgUrl.toString().startsWith("http")) {
+          return imgUrl;
+        } else if (imgUrl.toString().startsWith("/")) {
+          return "${Config.baseUrl}$imgUrl";
+        } else {
+          return "${Config.baseUrl}/$imgUrl";
+        }
+      }).toList();
     } else {
       imageUrls = [defaultImage];
     }
@@ -214,7 +220,7 @@ class _RouteDetailPageState extends State<RouteDetailPage> {
     if (confirm != true) return;
 
     final routeId = widget.route["id"];
-    final url = Uri.parse('$baseUrl/api/routes/$routeId/');
+    final url = Uri.parse('${Config.baseUrl}/routes/$routeId/');
 
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -258,6 +264,7 @@ class _RouteDetailPageState extends State<RouteDetailPage> {
     final rawDate = route["created_at"];
     final String formattedDate =
         rawDate != null ? rawDate.toString().substring(0, 10) : "No date";
+    final profilePictureUrl = route["profile_picture"];
 
     return Scaffold(
       appBar: AppBar(
@@ -280,7 +287,7 @@ class _RouteDetailPageState extends State<RouteDetailPage> {
                       child: GestureDetector(
                         onTap: () => _showImagePreview(index),
                         child: Image.network(
-                          imageUrls[index],
+                          imageUrls[index], //  ZATEN DÜZENLİ GELİYOR
                           fit: BoxFit.cover,
                           width: double.infinity,
                           errorBuilder: (context, error, stackTrace) =>
@@ -304,6 +311,39 @@ class _RouteDetailPageState extends State<RouteDetailPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      Row(
+                        children: [
+                          CircleAvatar(
+                            radius: 19,
+                            backgroundImage: profilePictureUrl != null
+                                ? NetworkImage(profilePictureUrl)
+                                : const AssetImage(
+                                        "assets/png/default_profile.png")
+                                    as ImageProvider,
+                          ),
+                          const SizedBox(width: 10),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              if (route["first_name"] != null &&
+                                  route["last_name"] != null)
+                                Text(
+                                  "${route["first_name"]} ${route["last_name"]}",
+                                  style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.bold),
+                                ),
+                              Text(
+                                "@${route["username"] ?? "unknown"}",
+                                style: const TextStyle(
+                                    color: Colors.white, fontSize: 15),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
                       Text(route["title"] ?? "",
                           style: const TextStyle(
                               color: Colors.white,
@@ -311,7 +351,7 @@ class _RouteDetailPageState extends State<RouteDetailPage> {
                               fontWeight: FontWeight.bold)),
                       const SizedBox(height: 6),
                       Text(route["description"] ?? "",
-                          style: const TextStyle(color: Colors.white70)),
+                          style: const TextStyle(color: Colors.white)),
                     ],
                   ),
                 ),

@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:travelouge_frontend/core/constants/config.dart';
 import 'package:travelouge_frontend/data/services/route_service.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
@@ -50,10 +51,8 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
       }
       if (route['images'] != null) {
         _networkImages = List.from(route['images'])
-            .map((img) => {
-                  "id": img['id'],
-                  "url": "http://127.0.0.1:8000${img['image']}"
-                })
+            .map((img) =>
+                {"id": img['id'], "url": "${Config.baseUrl}${img['image']}"})
             .toList();
       }
     }

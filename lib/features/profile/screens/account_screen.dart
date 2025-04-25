@@ -1,7 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:travelouge_frontend/features/profile/screens/change_password_screen.dart';
+import 'package:travelouge_frontend/features/profile/screens/edit_profile_page.dart';
 import 'package:travelouge_frontend/widget/custom_bottom_nav.dart';
 
 class AccountPage extends StatefulWidget {
@@ -16,6 +16,8 @@ class _AccountPageState extends State<AccountPage> {
   String email = "";
   String firstName = "";
   String lastName = "";
+  String bio = "";
+  String? profileImageUrl;
 
   @override
   void initState() {
@@ -30,6 +32,8 @@ class _AccountPageState extends State<AccountPage> {
       email = prefs.getString("email") ?? "";
       firstName = prefs.getString("first_name") ?? "";
       lastName = prefs.getString("last_name") ?? "";
+      bio = prefs.getString("bio") ?? "";
+      profileImageUrl = prefs.getString("profile_picture");
     });
   }
 
@@ -41,6 +45,13 @@ class _AccountPageState extends State<AccountPage> {
 
   @override
   Widget build(BuildContext context) {
+    print(" profileImageUrl from SharedPreferences: $profileImageUrl");
+
+    // Flutter RAM'deki image cache'ini temizle
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      imageCache.clear();
+      imageCache.clearLiveImages();
+    });
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
@@ -56,56 +67,102 @@ class _AccountPageState extends State<AccountPage> {
         ],
       ),
       bottomNavigationBar: const CustomBottomNav(currentIndex: 3),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            _buildGlassCard(children: [
-              _infoRow(Icons.person, "Ad", "$firstName $lastName"),
-              const SizedBox(height: 12),
-              _infoRow(Icons.account_circle, "Kullanıcı Adı", username),
-              const SizedBox(height: 12),
-              _infoRow(Icons.email, "E-posta", email),
-            ]),
-            const SizedBox(height: 15),
-            ElevatedButton.icon(
-              onPressed: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (_) => const ChangePasswordPage())),
-              style: ElevatedButton.styleFrom(
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            children: [
+              // 👤 Profil Fotoğrafı
+              CircleAvatar(
+                radius: 50,
                 backgroundColor: Colors.white10,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 55, vertical: 14),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12)),
+                child: ClipOval(
+                  child: profileImageUrl != null &&
+                          profileImageUrl!.startsWith("http")
+                      ? Image.network(
+                          "${profileImageUrl!}?v=${DateTime.now().millisecondsSinceEpoch}",
+                          width: 100,
+                          height: 100,
+                          fit: BoxFit.cover,
+                          gaplessPlayback: true,
+                          headers: {
+                            'Cache-Control':
+                                'no-cache, no-store, must-revalidate',
+                            'Pragma': 'no-cache',
+                            'Expires': '0',
+                          },
+                        )
+                      : Image.asset(
+                          "assets/png/default_profile.png",
+                          width: 100,
+                          height: 100,
+                          fit: BoxFit.cover,
+                        ),
+                ),
               ),
-              icon: const Icon(Icons.lock, color: Colors.white),
-              label: const Text("Şifreyi Değiştir",
-                  style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                      color: Colors.white)),
-            ),
-            const Spacer(),
-            ElevatedButton.icon(
-              onPressed: () => logOut(context),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.purple,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12)),
+              const SizedBox(height: 20),
+
+              _buildGlassCard(children: [
+                _infoRow(Icons.person, "Ad", "$firstName $lastName"),
+                const SizedBox(height: 12),
+                _infoRow(Icons.account_circle, "Kullanıcı Adı", username),
+                const SizedBox(height: 12),
+                _infoRow(Icons.email, "E-posta", email),
+                if (bio.isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  _infoRow(Icons.info_outline, "Bio", bio),
+                ]
+              ]),
+              const SizedBox(height: 15),
+
+              // 🛠️ Profili Düzenle
+              ElevatedButton.icon(
+                onPressed: () async {
+                  final result = await Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const EditProfilePage()),
+                  );
+
+                  if (result == true) {
+                    await _loadUserInfo(); // Güncellenmiş profil fotoğrafını da çek
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.white10,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 50, vertical: 14),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                ),
+                icon: const Icon(Icons.edit, color: Colors.white),
+                label: const Text("Profili Düzenle",
+                    style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                        color: Colors.white)),
               ),
-              icon: const Icon(Icons.logout, color: Colors.white),
-              label: const Text("Çıkış Yap",
-                  style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                      color: Colors.white)),
-            ),
-            const SizedBox(height: 80),
-          ],
+              const SizedBox(height: 12),
+
+              // 🚪 Çıkış Yap
+              ElevatedButton.icon(
+                onPressed: () => logOut(context),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.purple,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                ),
+                icon: const Icon(Icons.logout, color: Colors.white),
+                label: const Text("Çıkış Yap",
+                    style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                        color: Colors.white)),
+              ),
+              const SizedBox(height: 30),
+            ],
+          ),
         ),
       ),
     );

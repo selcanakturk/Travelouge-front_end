@@ -1,13 +1,18 @@
-import 'package:dio/dio.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:image_picker/image_picker.dart';
 import 'dart:convert';
+import 'package:dio/dio.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:travelouge_frontend/core/constants/config.dart'; // ✅ merkezi URL
 
 class RouteService {
-  final String baseUrl = "http://127.0.0.1:8000/api";
+  final dio = Dio();
 
-  Future<bool> addRoute(String title, String description, List<XFile> images,
-      List<Map<String, double>> routeCoords) async {
+  Future<bool> addRoute(
+    String title,
+    String description,
+    List<XFile> images,
+    List<Map<String, double>> routeCoords,
+  ) async {
     final prefs = await SharedPreferences.getInstance();
     String? token = prefs.getString('access_token');
 
@@ -15,11 +20,6 @@ class RouteService {
       print("⚠️ Token bulunamadı, giriş yapmalısınız!");
       return false;
     }
-
-    final dio = Dio();
-    dio.options.headers = {
-      'Authorization': 'Bearer $token',
-    };
 
     FormData formData = FormData.fromMap({
       "title": title.isEmpty ? 'Untitled' : title,
@@ -31,8 +31,8 @@ class RouteService {
     });
 
     try {
-      Response response = await dio.post(
-        "$baseUrl/routes/",
+      final response = await dio.post(
+        "${Config.baseUrl}/routes/",
         data: formData,
         options: Options(
           headers: {
@@ -42,12 +42,9 @@ class RouteService {
         ),
       );
 
-      if (response.statusCode == 201) {
-        return true;
-      } else {
-        return false;
-      }
+      return response.statusCode == 201;
     } catch (e) {
+      print("❌ Rota ekleme hatası: $e");
       return false;
     }
   }
@@ -68,11 +65,6 @@ class RouteService {
       return false;
     }
 
-    final dio = Dio();
-    dio.options.headers = {
-      'Authorization': 'Bearer $token',
-    };
-
     FormData formData = FormData.fromMap({
       "title": title.isEmpty ? 'Untitled' : title,
       "description": description,
@@ -86,7 +78,7 @@ class RouteService {
 
     try {
       final response = await dio.patch(
-        "$baseUrl/routes/$routeId/",
+        "${Config.baseUrl}/routes/$routeId/",
         data: formData,
         options: Options(
           headers: {
@@ -96,18 +88,10 @@ class RouteService {
         ),
       );
 
-      print("📥 Update response: ${response.statusCode} - ${response.data}");
-
-      if (response.statusCode == 200) {
-        print("✅ Rota başarıyla güncellendi.");
-        return true;
-      } else {
-        print(
-            "❌ Güncelleme başarısız: ${response.statusCode} - ${response.data}");
-        return false;
-      }
+      print("📥 Güncelleme sonucu: ${response.statusCode} - ${response.data}");
+      return response.statusCode == 200;
     } catch (e) {
-      print("⚠️ Güncelleme hatası: $e");
+      print("❌ Rota güncelleme hatası: $e");
       return false;
     }
   }
@@ -116,14 +100,11 @@ class RouteService {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('access_token');
 
-    if (token == null) {
-      return [];
-    }
+    if (token == null) return [];
 
-    final dio = Dio();
     try {
       final response = await dio.get(
-        "$baseUrl/routes/",
+        "${Config.baseUrl}/routes/",
         options: Options(
           headers: {
             "Authorization": "Bearer $token",
@@ -131,12 +112,9 @@ class RouteService {
         ),
       );
 
-      if (response.statusCode == 200) {
-        return response.data;
-      } else {
-        return [];
-      }
+      return response.statusCode == 200 ? response.data : [];
     } catch (e) {
+      print("❌ Rotalar alınamadı: $e");
       return [];
     }
   }
@@ -145,15 +123,11 @@ class RouteService {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('access_token');
 
-    if (token == null) {
-      return false;
-    }
-
-    final dio = Dio();
+    if (token == null) return false;
 
     try {
       final response = await dio.delete(
-        "$baseUrl/routes/$routeId/",
+        "${Config.baseUrl}/routes/$routeId/",
         options: Options(
           headers: {
             "Authorization": "Bearer $token",
@@ -161,12 +135,9 @@ class RouteService {
         ),
       );
 
-      if (response.statusCode == 204) {
-        return true;
-      } else {
-        return false;
-      }
+      return response.statusCode == 204;
     } catch (e) {
+      print("❌ Silme hatası: $e");
       return false;
     }
   }

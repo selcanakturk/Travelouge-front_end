@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
+import 'package:travelouge_frontend/core/constants/config.dart';
 import 'package:travelouge_frontend/features/route/screens/route_detail_screen.dart';
 import 'package:travelouge_frontend/widget/custom_bottom_nav.dart';
 
@@ -14,7 +15,6 @@ class _SearchPageState extends State<SearchPage> {
   List<Map<String, dynamic>> allRoutes = [];
   List<Map<String, dynamic>> filteredRoutes = [];
   final TextEditingController _searchController = TextEditingController();
-  final String baseUrl = 'http://127.0.0.1:8000';
 
   @override
   void initState() {
@@ -35,7 +35,7 @@ class _SearchPageState extends State<SearchPage> {
 
   Future<void> fetchRoutes(String query) async {
     try {
-      final response = await Dio().get('$baseUrl/api/routes/all/');
+      final response = await Dio().get('${Config.baseUrl}/routes/all/');
       final all = List<Map<String, dynamic>>.from(response.data);
       final results = all
           .where((route) => route['title']
@@ -125,7 +125,7 @@ class _SearchPageState extends State<SearchPage> {
                               final route = filteredRoutes[index];
                               final imageUrl = (route['images'] != null &&
                                       route['images'].isNotEmpty)
-                                  ? '$baseUrl${route['images'][0]['image']}'
+                                  ? '${Config.baseUrl}${route['images'][0]['image']}'
                                   : 'assets/png/default.png';
 
                               return GestureDetector(

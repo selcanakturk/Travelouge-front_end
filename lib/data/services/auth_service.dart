@@ -1,9 +1,9 @@
 import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:travelouge_frontend/core/constants/config.dart';
 
 class AuthService {
-  final String baseUrl = "http://127.0.0.1:8000/api";
-
+  final url = "${Config.baseUrl}/";
   // 🚀 Kayıt olma
   Future<bool> signUp(
     String username,
@@ -17,7 +17,7 @@ class AuthService {
 
     try {
       final response = await dio.post(
-        '$baseUrl/register/',
+        '${Config.baseUrl}/register/',
         data: {
           'username': username,
           'email': email,
@@ -48,7 +48,7 @@ class AuthService {
 
     try {
       final response = await dio.post(
-        "$baseUrl/token/",
+        "${Config.baseUrl}/token/",
         data: {"username": username, "password": password},
       );
 
@@ -89,7 +89,7 @@ class AuthService {
 
     try {
       final response = await dio.get(
-        "$baseUrl/profile/",
+        "${Config.baseUrl}/profile/",
         options: Options(headers: {
           'Authorization': 'Bearer $token',
         }),
@@ -99,15 +99,16 @@ class AuthService {
       await prefs.setString('email', data['email'] ?? '');
       await prefs.setString('first_name', data['first_name'] ?? '');
       await prefs.setString('last_name', data['last_name'] ?? '');
+      await prefs.setString('bio', data['bio'] ?? '');
 
       if (data['id'] != null) {
-        await prefs.setInt('user_id', data['id']); //  user_id kaydedildi
+        await prefs.setInt('user_id', data['id']);
         print("✅ user_id kaydedildi: ${data['id']}");
       }
 
-      print(" Kullanıcı profil verisi başarıyla kaydedildi");
+      print("✅ Kullanıcı profil verisi başarıyla kaydedildi");
     } catch (e) {
-      print(" Kullanıcı profil verisi alınamadı: $e");
+      print("❌ Kullanıcı profil verisi alınamadı: $e");
     }
   }
 
@@ -125,7 +126,7 @@ class AuthService {
 
     try {
       final response = await dio.post(
-        "http://127.0.0.1:8000/api/change-password/", // <-- PUT yerine POST
+        "${Config.baseUrl}/change-password/", // <-- PUT yerine POST
         data: {
           "old_password": oldPassword,
           "new_password": newPassword,
