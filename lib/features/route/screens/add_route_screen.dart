@@ -51,8 +51,12 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
       }
       if (route['images'] != null) {
         _networkImages = List.from(route['images'])
-            .map((img) =>
-                {"id": img['id'], "url": "${Config.baseUrl}${img['image']}"})
+            .map((img) => {
+                  "id": img['id'],
+                  "url": img['image'].toString().startsWith('http')
+                      ? img['image']
+                      : "${Config.baseUrl}${img['image']}"
+                })
             .toList();
       }
     }
@@ -229,40 +233,54 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
                 ),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(12),
-                  child: GoogleMap(
-                    initialCameraPosition:
-                        CameraPosition(target: center, zoom: 13),
-                    onMapCreated: (controller) {
-                      _miniMapController = controller;
-                      if (_routePoints.isNotEmpty) {
-                        controller.animateCamera(
-                          CameraUpdate.newLatLngBounds(
-                            _boundsFromLatLngList(_routePoints),
-                            50,
-                          ),
-                        );
-                      }
-                    },
-                    markers: _routePoints
-                        .map((point) => Marker(
-                              markerId: MarkerId(point.toString()),
-                              position: point,
-                            ))
-                        .toSet(),
-                    polylines: {
-                      if (_routePoints.length >= 2)
-                        Polyline(
-                          polylineId: const PolylineId('route'),
-                          color: Colors.blue,
-                          width: 4,
-                          points: _routePoints,
+                  child: Stack(
+                    children: [
+                      IgnorePointer(
+                        child: GoogleMap(
+                          initialCameraPosition:
+                              CameraPosition(target: center, zoom: 13),
+                          onMapCreated: (controller) {
+                            _miniMapController = controller;
+                            if (_routePoints.isNotEmpty) {
+                              controller.animateCamera(
+                                CameraUpdate.newLatLngBounds(
+                                  _boundsFromLatLngList(_routePoints),
+                                  50,
+                                ),
+                              );
+                            }
+                          },
+                          markers: _routePoints
+                              .map((point) => Marker(
+                                    markerId: MarkerId(point.toString()),
+                                    position: point,
+                                  ))
+                              .toSet(),
+                          polylines: {
+                            if (_routePoints.length >= 2)
+                              Polyline(
+                                polylineId: const PolylineId('route'),
+                                color: Colors.blue,
+                                width: 4,
+                                points: _routePoints,
+                              ),
+                          },
+                          myLocationEnabled: true,
+                          zoomControlsEnabled: false,
+                          gestureRecognizers:
+                              <Factory<OneSequenceGestureRecognizer>>{}.toSet(),
                         ),
-                    },
-                    myLocationEnabled: true,
-                    zoomControlsEnabled: false,
-                    onTap: (_) {},
-                    gestureRecognizers:
-                        <Factory<OneSequenceGestureRecognizer>>{}.toSet(),
+                      ),
+                      // Üstte tıklama katmanı
+                      Positioned.fill(
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: _openFullMap,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -291,81 +309,86 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
               ),
             ),
             const SizedBox(height: 10),
-            _networkImages.isNotEmpty || _images.isNotEmpty
-                ? Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      ..._networkImages.asMap().entries.map((entry) {
-                        int index = entry.key;
-                        String url = entry.value['url'];
-                        return Stack(
-                          children: [
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(12),
-                              child: Image.network(
-                                url,
-                                width: 160,
-                                height: 160,
-                                fit: BoxFit.cover,
-                              ),
+            if (_networkImages.isNotEmpty || _images.isNotEmpty)
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  // Ağdan gelen resimler
+                  ..._networkImages.asMap().entries.map((entry) {
+                    int index = entry.key;
+                    String url = entry.value['url'];
+                    return Stack(
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: Image.network(
+                            url,
+                            width: 160,
+                            height: 160,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) =>
+                                const Icon(Icons.broken_image, size: 50),
+                          ),
+                        ),
+                        Positioned(
+                          top: 4,
+                          right: 4,
+                          child: Container(
+                            decoration: const BoxDecoration(
+                              color: Colors.black54,
+                              shape: BoxShape.circle,
                             ),
-                            Positioned(
-                              top: 4,
-                              right: 4,
-                              child: Container(
-                                decoration: const BoxDecoration(
-                                  color: Colors.black54,
-                                  shape: BoxShape.circle,
-                                ),
-                                child: IconButton(
-                                  padding: EdgeInsets.zero,
-                                  icon: const Icon(Icons.close,
-                                      size: 18, color: Colors.white),
-                                  onPressed: () =>
-                                      _removeImage(index, isNetwork: true),
-                                ),
-                              ),
-                            )
-                          ],
-                        );
-                      }),
-                      ..._images.asMap().entries.map((entry) {
-                        int index = entry.key;
-                        XFile image = entry.value;
-                        return Stack(
-                          children: [
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(12),
-                              child: Image.file(
-                                File(image.path),
-                                width: 160,
-                                height: 160,
-                                fit: BoxFit.cover,
-                              ),
+                            child: IconButton(
+                              padding: EdgeInsets.zero,
+                              icon: const Icon(Icons.close,
+                                  size: 18, color: Colors.white),
+                              onPressed: () =>
+                                  _removeImage(index, isNetwork: true),
                             ),
-                            Positioned(
-                              top: 4,
-                              right: 4,
-                              child: Container(
-                                decoration: const BoxDecoration(
-                                  color: Colors.black54,
-                                  shape: BoxShape.circle,
-                                ),
-                                child: IconButton(
-                                  padding: EdgeInsets.zero,
-                                  icon: const Icon(Icons.close,
-                                      size: 18, color: Colors.white),
-                                  onPressed: () => _removeImage(index),
-                                ),
-                              ),
-                            )
-                          ],
-                        );
-                      })
-                    ],
-                  )
-                : const Text("No photos selected yet."),
+                          ),
+                        ),
+                      ],
+                    );
+                  }),
+                  // Yeni seçilen local resimler
+                  ..._images.asMap().entries.map((entry) {
+                    int index = entry.key;
+                    XFile image = entry.value;
+                    return Stack(
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: Image.file(
+                            File(image.path),
+                            width: 160,
+                            height: 160,
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                        Positioned(
+                          top: 4,
+                          right: 4,
+                          child: Container(
+                            decoration: const BoxDecoration(
+                              color: Colors.black54,
+                              shape: BoxShape.circle,
+                            ),
+                            child: IconButton(
+                              padding: EdgeInsets.zero,
+                              icon: const Icon(Icons.close,
+                                  size: 18, color: Colors.white),
+                              onPressed: () => _removeImage(index),
+                            ),
+                          ),
+                        ),
+                      ],
+                    );
+                  }),
+                ],
+              )
+            else
+              const Text("No photos selected yet."),
             const SizedBox(height: 30),
             Center(
               child: ElevatedButton.icon(

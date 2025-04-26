@@ -1,6 +1,8 @@
 import 'dart:ui';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:travelouge_frontend/core/constants/config.dart';
 import 'package:travelouge_frontend/features/profile/screens/edit_profile_page.dart';
 import 'package:travelouge_frontend/widget/custom_bottom_nav.dart';
 
@@ -22,7 +24,48 @@ class _AccountPageState extends State<AccountPage> {
   @override
   void initState() {
     super.initState();
-    _loadUserInfo();
+    _fetchAndUpdateUserProfile(); // 🔥 Önce sunucudan çek
+  }
+
+  Future<void> _fetchAndUpdateUserProfile() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('access_token');
+    final dio = Dio();
+
+    try {
+      final response = await dio.get(
+        "${Config.baseUrl}/profile/",
+        options: Options(headers: {
+          "Authorization": "Bearer $token",
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final data = response.data;
+
+        await prefs.setString("first_name", data["first_name"] ?? "");
+        await prefs.setString("last_name", data["last_name"] ?? "");
+        await prefs.setString("username", data["username"] ?? "");
+        await prefs.setString("email", data["email"] ?? "");
+        await prefs.setString("bio", data["bio"] ?? "");
+
+        if (data["profile_picture"] != null &&
+            data["profile_picture"].toString().isNotEmpty) {
+          final imageUrl = data["profile_picture"].toString().startsWith("http")
+              ? data["profile_picture"]
+              : "${Config.baseUrl}${data["profile_picture"]}";
+          await prefs.setString("profile_picture", imageUrl);
+        } else {
+          await prefs.remove("profile_picture");
+        }
+
+        setState(() {
+          _loadUserInfo(); // ✅ Güncellenmiş bilgileri oku ve ekrana bas
+        });
+      }
+    } catch (e) {
+      print("❌ Kullanıcı profili çekilemedi: $e");
+    }
   }
 
   Future<void> _loadUserInfo() async {

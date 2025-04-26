@@ -7,6 +7,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart' as gmap;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:travelouge_frontend/core/constants/config.dart';
 import 'package:travelouge_frontend/features/route/screens/add_route_screen.dart';
+import 'package:travelouge_frontend/features/route/screens/trips_screen.dart';
 import 'route_preview_map_screen.dart';
 import 'package:travelouge_frontend/widget/custom_snackbar.dart';
 
@@ -66,6 +67,50 @@ class _RouteDetailPageState extends State<RouteDetailPage> {
       setState(() {
         isOwner = currentUserId == routeOwnerId;
       });
+    }
+    print(coordinates);
+  }
+
+  Future<void> _refreshRouteData() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('access_token');
+      final routeId = widget.route["id"];
+
+      final response = await http.get(
+        Uri.parse('${Config.baseUrl}/routes/$routeId/'),
+        headers: {
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        setState(() {
+          widget.route.clear();
+          widget.route.addAll(response.body.isNotEmpty
+              ? Map<String, dynamic>.from(response.body as Map)
+              : {});
+          _loadData();
+        });
+      }
+    } catch (e) {
+      print("Rota verisi yenilenemedi: $e");
+    }
+  }
+
+  void _navigateToUserTrips() {
+    final routeOwnerId = widget.route["user"] ??
+        widget.route["user_id"] ??
+        widget.route["owner"] ??
+        widget.route["owner_id"];
+
+    if (routeOwnerId != null) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => TripsScreen(userId: routeOwnerId),
+        ),
+      );
     }
   }
 
@@ -134,17 +179,15 @@ class _RouteDetailPageState extends State<RouteDetailPage> {
   }
 
   void _editRoute() async {
-    await Navigator.push(
+    final result = await Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => AddRouteScreen(existingRoute: widget.route),
       ),
     );
 
-    if (mounted) {
-      setState(() {
-        _loadData();
-      });
+    if (result == true && mounted) {
+      _refreshRouteData();
     }
   }
 
@@ -287,7 +330,7 @@ class _RouteDetailPageState extends State<RouteDetailPage> {
                       child: GestureDetector(
                         onTap: () => _showImagePreview(index),
                         child: Image.network(
-                          imageUrls[index], //  ZATEN DÜZENLİ GELİYOR
+                          imageUrls[index],
                           fit: BoxFit.cover,
                           width: double.infinity,
                           errorBuilder: (context, error, stackTrace) =>
@@ -302,57 +345,60 @@ class _RouteDetailPageState extends State<RouteDetailPage> {
                 bottom: 16,
                 left: 16,
                 right: 16,
-                child: Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.6),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          CircleAvatar(
-                            radius: 19,
-                            backgroundImage: profilePictureUrl != null
-                                ? NetworkImage(profilePictureUrl)
-                                : const AssetImage(
-                                        "assets/png/default_profile.png")
-                                    as ImageProvider,
-                          ),
-                          const SizedBox(width: 10),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              if (route["first_name"] != null &&
-                                  route["last_name"] != null)
+                child: GestureDetector(
+                  onTap: _navigateToUserTrips,
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.6),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            CircleAvatar(
+                              radius: 19,
+                              backgroundImage: profilePictureUrl != null
+                                  ? NetworkImage(profilePictureUrl)
+                                  : const AssetImage(
+                                          "assets/png/default_profile.png")
+                                      as ImageProvider,
+                            ),
+                            const SizedBox(width: 10),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                if (route["first_name"] != null &&
+                                    route["last_name"] != null)
+                                  Text(
+                                    "${route["first_name"]} ${route["last_name"]}",
+                                    style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.bold),
+                                  ),
                                 Text(
-                                  "${route["first_name"]} ${route["last_name"]}",
+                                  "@${route["username"] ?? "unknown"}",
                                   style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.bold),
+                                      color: Colors.white, fontSize: 15),
                                 ),
-                              Text(
-                                "@${route["username"] ?? "unknown"}",
-                                style: const TextStyle(
-                                    color: Colors.white, fontSize: 15),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      Text(route["title"] ?? "",
-                          style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold)),
-                      const SizedBox(height: 6),
-                      Text(route["description"] ?? "",
-                          style: const TextStyle(color: Colors.white)),
-                    ],
+                              ],
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        Text(route["title"] ?? "",
+                            style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 6),
+                        Text(route["description"] ?? "",
+                            style: const TextStyle(color: Colors.white)),
+                      ],
+                    ),
                   ),
                 ),
               )
@@ -507,7 +553,7 @@ class _RouteDetailPageState extends State<RouteDetailPage> {
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: children,
+            children: children, // ← BURASI eksikti!
           ),
         ),
       ),

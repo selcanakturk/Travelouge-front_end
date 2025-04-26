@@ -10,7 +10,9 @@ import 'package:intl/intl.dart';
 Dio dio = Dio();
 
 class TripsScreen extends StatefulWidget {
-  const TripsScreen({super.key});
+  final int? userId;
+  final String? username;
+  const TripsScreen({super.key, this.userId, this.username});
 
   @override
   State<TripsScreen> createState() => _TripsScreenState();
@@ -23,12 +25,16 @@ class _TripsScreenState extends State<TripsScreen> {
   String username = "";
   String bio = "";
   String? profilePictureUrl = '';
+  bool isOwner = false;
 
   @override
   void initState() {
     super.initState();
-    fetchUserProfile();
-    fetchUserRoutes();
+    fetchUserData();
+  }
+
+  Future<void> fetchUserData() async {
+    await Future.wait([fetchUserProfile(), fetchUserRoutes()]);
   }
 
   String formatDate(dynamic rawDate) {
@@ -51,16 +57,21 @@ class _TripsScreenState extends State<TripsScreen> {
 
     try {
       final response = await dio.get(
-        '${Config.baseUrl}/profile/',
+        widget.userId != null
+            ? '${Config.baseUrl}/users/${widget.userId}/'
+            : '${Config.baseUrl}/profile/',
         options: Options(headers: {'Authorization': 'Bearer $token'}),
       );
 
+      final currentUserId = prefs.getInt("user_id");
       setState(() {
         fullName =
             "${response.data['first_name']} ${response.data['last_name']}";
         username = response.data['username'];
         bio = response.data['bio'] ?? "";
         profilePictureUrl = response.data['profile_picture'];
+        isOwner = currentUserId == response.data['id'];
+
         if (profilePictureUrl != null && profilePictureUrl!.isNotEmpty) {
           if (!profilePictureUrl!.startsWith("http")) {
             profilePictureUrl = "${Config.baseUrl}$profilePictureUrl";
@@ -79,8 +90,12 @@ class _TripsScreenState extends State<TripsScreen> {
     final token = prefs.getString('access_token');
 
     try {
+      final endpoint = widget.userId != null
+          ? '${Config.baseUrl}/routes/all/'
+          : '${Config.baseUrl}/routes/';
+
       final response = await dio.get(
-        '${Config.baseUrl}/routes/',
+        endpoint,
         options: Options(headers: {'Authorization': 'Bearer $token'}),
       );
 
@@ -89,6 +104,9 @@ class _TripsScreenState extends State<TripsScreen> {
 
       for (var route in data) {
         if (route["is_deleted"] == true) continue;
+
+        final ownerId = route["user"] ?? route["user_id"] ?? route["owner"];
+        if (widget.userId != null && ownerId != widget.userId) continue;
 
         String imageUrl = defaultImage;
         if (route["images"] != null &&
@@ -107,7 +125,6 @@ class _TripsScreenState extends State<TripsScreen> {
         route["image"] = imageUrl;
         route["location"] = location;
         route["date"] = route["created_at"];
-        route["user"] = route["user"] ?? route["user_id"] ?? route["owner"];
 
         routes.add(route);
       }
@@ -131,67 +148,16 @@ class _TripsScreenState extends State<TripsScreen> {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pushNamedAndRemoveUntil(
-              context, '/home', (route) => false),
+          onPressed: () {
+            Navigator.pushNamedAndRemoveUntil(
+                context, '/home', (route) => false);
+          },
         ),
       ),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(20),
-              color: Colors.white.withOpacity(0.05),
-            ),
-            child: Row(
-              children: [
-                CircleAvatar(
-                  radius: 30,
-                  backgroundColor: Colors.grey[800],
-                  backgroundImage:
-                      profilePictureUrl != null && profilePictureUrl!.isNotEmpty
-                          ? NetworkImage(profilePictureUrl!)
-                          : const AssetImage('assets/png/default_profile.png')
-                              as ImageProvider,
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        fullName,
-                        style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 17,
-                            fontWeight: FontWeight.w600),
-                      ),
-                      Text(
-                        '@$username',
-                        style: const TextStyle(
-                            color: Colors.purpleAccent,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w400),
-                      ),
-                      if (bio.isNotEmpty)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 6.0),
-                          child: Text(
-                            bio,
-                            style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 15,
-                                fontStyle: FontStyle.italic),
-                          ),
-                        )
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
+          _buildProfileSection(),
           Expanded(
             child: userRoutes.isEmpty
                 ? _buildEmptyState()
@@ -212,7 +178,60 @@ class _TripsScreenState extends State<TripsScreen> {
           )
         ],
       ),
-      floatingActionButton: _buildFloatingButton(),
+      floatingActionButton: isOwner ? _buildFloatingButton() : null,
+    );
+  }
+
+  Widget _buildProfileSection() {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        color: Colors.white.withOpacity(0.05),
+      ),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 30,
+            backgroundColor: Colors.grey[800],
+            backgroundImage:
+                profilePictureUrl != null && profilePictureUrl!.isNotEmpty
+                    ? NetworkImage(profilePictureUrl!)
+                    : const AssetImage('assets/png/default_profile.png')
+                        as ImageProvider,
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  fullName.isNotEmpty ? fullName : "İsim yok",
+                  style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 17,
+                      fontWeight: FontWeight.w600),
+                ),
+                Text(
+                  username.isNotEmpty ? '@$username' : "@unknown",
+                  style: const TextStyle(
+                      color: Colors.purpleAccent,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w400),
+                ),
+                Text(
+                  bio.isNotEmpty ? bio : "Açıklama yok",
+                  style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 15,
+                      fontStyle: FontStyle.italic),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -241,16 +260,16 @@ class _TripsScreenState extends State<TripsScreen> {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
-        children: [
+        children: const [
           Icon(Icons.explore, size: 80, color: Colors.white24),
-          const SizedBox(height: 16),
-          const Text("Henüz bir rota eklemediniz!",
+          SizedBox(height: 16),
+          Text("Henüz bir rota eklemediniz!",
               style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
                   color: Colors.white)),
-          const SizedBox(height: 8),
-          const Text("Yeni bir keşif yapmaya ne dersiniz?",
+          SizedBox(height: 8),
+          Text("Yeni bir keşif yapmaya ne dersiniz?",
               style: TextStyle(fontSize: 16, color: Colors.white60)),
         ],
       ),

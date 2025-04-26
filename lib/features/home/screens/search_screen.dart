@@ -124,8 +124,13 @@ class _SearchPageState extends State<SearchPage> {
                             itemBuilder: (context, index) {
                               final route = filteredRoutes[index];
                               final imageUrl = (route['images'] != null &&
-                                      route['images'].isNotEmpty)
-                                  ? '${Config.baseUrl}${route['images'][0]['image']}'
+                                      route['images'].isNotEmpty &&
+                                      route['images'][0]['image'] != null)
+                                  ? (route['images'][0]['image']
+                                          .toString()
+                                          .startsWith("http")
+                                      ? route['images'][0]['image']
+                                      : '${Config.baseUrl}${route['images'][0]['image']}')
                                   : 'assets/png/default.png';
 
                               return GestureDetector(
@@ -146,20 +151,27 @@ class _SearchPageState extends State<SearchPage> {
                                   child: Row(
                                     children: [
                                       ClipRRect(
-                                        borderRadius: BorderRadius.circular(10),
-                                        child: Image.network(
-                                          imageUrl,
-                                          width: 90,
-                                          height: 90,
-                                          fit: BoxFit.cover,
-                                          errorBuilder:
-                                              (context, error, stackTrace) =>
-                                                  Image.asset(
-                                                      'assets/png/default.png',
-                                                      width: 90,
-                                                      height: 90),
-                                        ),
-                                      ),
+                                          borderRadius:
+                                              BorderRadius.circular(10),
+                                          child: imageUrl.startsWith("http")
+                                              ? Image.network(
+                                                  imageUrl,
+                                                  width: 90,
+                                                  height: 90,
+                                                  fit: BoxFit.cover,
+                                                  errorBuilder: (context, error,
+                                                          stackTrace) =>
+                                                      Image.asset(
+                                                          'assets/png/default.png',
+                                                          width: 90,
+                                                          height: 90),
+                                                )
+                                              : Image.asset(
+                                                  'assets/png/default.png',
+                                                  width: 90,
+                                                  height: 90,
+                                                  fit: BoxFit.cover,
+                                                )),
                                       const SizedBox(width: 12),
                                       Expanded(
                                         child: Column(
