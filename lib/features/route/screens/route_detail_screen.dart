@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -8,6 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:travelouge_frontend/core/constants/config.dart';
 import 'package:travelouge_frontend/features/route/screens/add_route_screen.dart';
 import 'package:travelouge_frontend/features/route/screens/trips_screen.dart';
+import 'package:travelouge_frontend/widget/comment_sheet.dart';
 import 'route_preview_map_screen.dart';
 import 'package:travelouge_frontend/widget/custom_snackbar.dart';
 
@@ -23,6 +25,9 @@ class RouteDetailPage extends StatefulWidget {
 class _RouteDetailPageState extends State<RouteDetailPage> {
   List<String> imageUrls = [];
   List<osm.LatLng> coordinates = [];
+  bool isLiked = false;
+  int likesCount = 0;
+  int commentsCount = 0;
   int currentIndex = 0;
   final String defaultImage = 'assets/png/default.png';
   bool isOwner = false;
@@ -31,6 +36,8 @@ class _RouteDetailPageState extends State<RouteDetailPage> {
   void initState() {
     super.initState();
     _loadData();
+    checkIfLiked();
+    _refreshRouteData();
   }
 
   Future<void> _loadData() async {
@@ -65,10 +72,17 @@ class _RouteDetailPageState extends State<RouteDetailPage> {
 
     if (currentUserId != null && routeOwnerId != null) {
       setState(() {
-        isOwner = currentUserId == routeOwnerId;
+        likesCount = widget.route['likes_count'] ?? 0;
+        commentsCount = widget.route['comments_count'] ?? 0;
+        isLiked = widget.route['is_liked_by_current_user'] ?? false;
       });
     }
     print(coordinates);
+    //  Like bilgilerini çek
+    setState(() {
+      likesCount = widget.route['likes_count'] ?? 0;
+      commentsCount = widget.route['comments_count'] ?? 0;
+    });
   }
 
   Future<void> _refreshRouteData() async {
@@ -85,11 +99,12 @@ class _RouteDetailPageState extends State<RouteDetailPage> {
       );
 
       if (response.statusCode == 200) {
+        final Map<String, dynamic> updatedData =
+            json.decode(utf8.decode(response.bodyBytes));
+
         setState(() {
           widget.route.clear();
-          widget.route.addAll(response.body.isNotEmpty
-              ? Map<String, dynamic>.from(response.body as Map)
-              : {});
+          widget.route.addAll(updatedData);
           _loadData();
         });
       }
@@ -263,8 +278,7 @@ class _RouteDetailPageState extends State<RouteDetailPage> {
     if (confirm != true) return;
 
     final routeId = widget.route["id"];
-    final url = Uri.parse('${Config.baseUrl}/routes/$routeId/');
-
+    final url = Uri.parse('${Config.baseUrl}/routes/$routeId/like/');
     try {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('access_token');
@@ -424,6 +438,34 @@ class _RouteDetailPageState extends State<RouteDetailPage> {
             ),
           ),
           const SizedBox(height: 20),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            child: Row(
+              children: [
+                IconButton(
+                  icon: Icon(
+                    isLiked ? Icons.favorite : Icons.favorite_border,
+                    color: isLiked ? Colors.red : Colors.white,
+                  ),
+                  onPressed: () => toggleLike(widget.route['id']),
+                ),
+                Text(
+                  '$likesCount',
+                  style: TextStyle(color: Colors.white),
+                ),
+                const SizedBox(width: 12),
+                IconButton(
+                  icon: const Icon(Icons.mode_comment_outlined,
+                      color: Colors.white),
+                  onPressed: _openComments,
+                ),
+                Text(
+                  '$commentsCount',
+                  style: TextStyle(color: Colors.white),
+                ),
+              ],
+            ),
+          ),
           Center(
             child: Text(
               "\u{1F4C5} $formattedDate",
@@ -558,5 +600,88 @@ class _RouteDetailPageState extends State<RouteDetailPage> {
         ),
       ),
     );
+  }
+
+  Future<void> toggleLike(int routeId) async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('access_token');
+    final url = Uri.parse('${Config.baseUrl}/routes/$routeId/like/');
+
+    try {
+      final response = await http.post(
+        url,
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final data = json.decode(utf8.decode(response.bodyBytes));
+        final liked = data['liked'];
+
+        setState(() {
+          isLiked = liked;
+          if (liked) {
+            likesCount += 1;
+          } else {
+            likesCount = (likesCount - 1).clamp(0, double.infinity).toInt();
+          }
+        });
+      } else {
+        print('Like/Unlike başarısız: ${response.body}');
+      }
+    } catch (e) {
+      print('Like/Unlike Hatası: $e');
+    }
+  }
+
+  Future<void> checkIfLiked() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('access_token');
+
+    try {
+      final response = await http.get(
+        Uri.parse('${Config.baseUrl}/routes/${widget.route['id']}/is-liked/'),
+        headers: {
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(utf8.decode(response.bodyBytes));
+        setState(() {
+          isLiked = data['is_liked'] ?? false;
+        });
+      } else {
+        print('Beğeni durumu kontrol edilemedi: ${response.body}');
+      }
+    } catch (e) {
+      print('Beğeni durumu çekilirken hata: $e');
+    }
+  }
+
+  void _openComments() async {
+    final routeId = widget.route['id'];
+    final routeOwnerId = widget.route['user'] ??
+        widget.route['user_id'] ??
+        widget.route['owner'];
+
+    final result = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.black,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return CommentsSheet(routeId: routeId, routeOwnerId: routeOwnerId);
+      },
+    );
+
+    if (result == true) {
+      // Eğer yorum eklendi ya da silindiyse, tekrar veriyi çeker
+      _refreshRouteData();
+    }
   }
 }
