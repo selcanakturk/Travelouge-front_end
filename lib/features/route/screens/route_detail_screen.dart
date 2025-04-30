@@ -35,9 +35,13 @@ class _RouteDetailPageState extends State<RouteDetailPage> {
   @override
   void initState() {
     super.initState();
-    _loadData();
-    checkIfLiked();
-    _refreshRouteData();
+    _initPage();
+  }
+
+  Future<void> _initPage() async {
+    await _refreshRouteData(); // önce sunucudan route verisini çek
+    await checkIfLiked(); // sonra beğeni durumu çek
+    await _loadData(); // en son state güncelle
   }
 
   Future<void> _loadData() async {
@@ -72,6 +76,7 @@ class _RouteDetailPageState extends State<RouteDetailPage> {
 
     if (currentUserId != null && routeOwnerId != null) {
       setState(() {
+        isOwner = currentUserId == routeOwnerId;
         likesCount = widget.route['likes_count'] ?? 0;
         commentsCount = widget.route['comments_count'] ?? 0;
         isLiked = widget.route['is_liked_by_current_user'] ?? false;
@@ -89,6 +94,7 @@ class _RouteDetailPageState extends State<RouteDetailPage> {
     try {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('access_token');
+
       final routeId = widget.route["id"];
 
       final response = await http.get(
@@ -278,7 +284,7 @@ class _RouteDetailPageState extends State<RouteDetailPage> {
     if (confirm != true) return;
 
     final routeId = widget.route["id"];
-    final url = Uri.parse('${Config.baseUrl}/routes/$routeId/like/');
+    final url = Uri.parse('${Config.baseUrl}/routes/$routeId/');
     try {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('access_token');
@@ -335,6 +341,7 @@ class _RouteDetailPageState extends State<RouteDetailPage> {
               SizedBox(
                 height: 280,
                 child: PageView.builder(
+                  controller: PageController(),
                   itemCount: imageUrls.length,
                   onPageChanged: (index) =>
                       setState(() => currentIndex = index),
@@ -343,28 +350,46 @@ class _RouteDetailPageState extends State<RouteDetailPage> {
                       tag: imageUrls[index] + (route["title"] ?? ""),
                       child: GestureDetector(
                         onTap: () => _showImagePreview(index),
-                        child: Image.network(
-                          imageUrls[index],
-                          fit: BoxFit.cover,
-                          width: double.infinity,
-                          errorBuilder: (context, error, stackTrace) =>
-                              Image.asset(defaultImage, fit: BoxFit.cover),
+                        child: Stack(
+                          fit: StackFit.expand,
+                          children: [
+                            Image.network(
+                              imageUrls[index],
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) =>
+                                  Image.asset(defaultImage, fit: BoxFit.cover),
+                            ),
+                            // GRADIENT OVERLAY
+                            Container(
+                              decoration: const BoxDecoration(
+                                gradient: LinearGradient(
+                                  begin: Alignment.topCenter,
+                                  end: Alignment.bottomCenter,
+                                  colors: [
+                                    Colors.transparent,
+                                    Colors.black,
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     );
                   },
                 ),
               ),
+              SizedBox(height: 12),
               Positioned(
-                bottom: 16,
-                left: 16,
-                right: 16,
+                bottom: 2,
+                left: 2,
+                right: 2,
                 child: GestureDetector(
                   onTap: _navigateToUserTrips,
                   child: Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.6),
+                      color: Colors.white.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(16),
                     ),
                     child: Column(
@@ -373,7 +398,7 @@ class _RouteDetailPageState extends State<RouteDetailPage> {
                         Row(
                           children: [
                             CircleAvatar(
-                              radius: 19,
+                              radius: 22,
                               backgroundImage: profilePictureUrl != null
                                   ? NetworkImage(profilePictureUrl)
                                   : const AssetImage(
@@ -396,7 +421,9 @@ class _RouteDetailPageState extends State<RouteDetailPage> {
                                 Text(
                                   "@${route["username"] ?? "unknown"}",
                                   style: const TextStyle(
-                                      color: Colors.white, fontSize: 15),
+                                      color: Colors.white,
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold),
                                 ),
                               ],
                             ),
@@ -410,7 +437,10 @@ class _RouteDetailPageState extends State<RouteDetailPage> {
                                 fontWeight: FontWeight.bold)),
                         const SizedBox(height: 6),
                         Text(route["description"] ?? "",
-                            style: const TextStyle(color: Colors.white)),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 17,
+                            )),
                       ],
                     ),
                   ),
@@ -418,7 +448,7 @@ class _RouteDetailPageState extends State<RouteDetailPage> {
               )
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: List.generate(
@@ -438,50 +468,16 @@ class _RouteDetailPageState extends State<RouteDetailPage> {
             ),
           ),
           const SizedBox(height: 20),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-            child: Row(
-              children: [
-                IconButton(
-                  icon: Icon(
-                    isLiked ? Icons.favorite : Icons.favorite_border,
-                    color: isLiked ? Colors.red : Colors.white,
-                  ),
-                  onPressed: () => toggleLike(widget.route['id']),
-                ),
-                Text(
-                  '$likesCount',
-                  style: TextStyle(color: Colors.white),
-                ),
-                const SizedBox(width: 12),
-                IconButton(
-                  icon: const Icon(Icons.mode_comment_outlined,
-                      color: Colors.white),
-                  onPressed: _openComments,
-                ),
-                Text(
-                  '$commentsCount',
-                  style: TextStyle(color: Colors.white),
-                ),
-              ],
-            ),
-          ),
-          Center(
-            child: Text(
-              "\u{1F4C5} $formattedDate",
-              style: const TextStyle(color: Colors.white70, fontSize: 14),
-            ),
-          ),
-          const SizedBox(height: 20),
           if (coordinates.isNotEmpty)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: _buildGlassCard([
-                SizedBox(
-                  height: 250,
-                  child: Stack(
-                    children: [
-                      FlutterMap(
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(20),
+                child: Stack(
+                  children: [
+                    SizedBox(
+                      height: 250,
+                      child: FlutterMap(
                         options: MapOptions(
                           initialCenter: coordinates.first,
                           initialZoom: 15,
@@ -519,17 +515,100 @@ class _RouteDetailPageState extends State<RouteDetailPage> {
                           ),
                         ],
                       ),
-                      Positioned.fill(
-                        child: Material(
-                          color: Colors.transparent,
-                          child: InkWell(onTap: _openFullMapPreview),
+                    ),
+
+                    // Ripple effect
+                    Positioned.fill(
+                      child: Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          onTap: _openFullMapPreview,
+                          splashColor: Colors.white.withOpacity(0.1),
+                          highlightColor: Colors.white.withOpacity(0.05),
                         ),
                       ),
-                    ],
-                  ),
+                    ),
+
+                    // Optional: label on map
+                    Positioned(
+                      bottom: 8,
+                      right: 12,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withOpacity(0.4),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Text(
+                          'Tap to open map',
+                          style: TextStyle(color: Colors.white70, fontSize: 12),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-              ]),
+              ),
             ),
+          const SizedBox(height: 24),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    GestureDetector(
+                      onTap: () => toggleLike(widget.route['id']),
+                      child: Row(
+                        children: [
+                          Icon(
+                            isLiked ? Icons.favorite : Icons.favorite_border,
+                            color: isLiked ? Colors.red : Colors.white,
+                            size: 25,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            '$likesCount',
+                            style: const TextStyle(
+                                color: Colors.white, fontSize: 16),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    GestureDetector(
+                      onTap: _openComments,
+                      child: Row(
+                        children: [
+                          const Icon(Icons.mode_comment_outlined,
+                              color: Colors.white, size: 25),
+                          const SizedBox(width: 4),
+                          Text(
+                            '$commentsCount',
+                            style: const TextStyle(
+                                color: Colors.white, fontSize: 16),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                Row(
+                  children: [
+                    const Icon(Icons.calendar_month,
+                        color: Colors.white70, size: 18),
+                    const SizedBox(width: 6),
+                    Text(
+                      formattedDate,
+                      style:
+                          const TextStyle(color: Colors.white70, fontSize: 15),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
           const SizedBox(height: 24),
           if (isOwner)
             Padding(
@@ -580,27 +659,27 @@ class _RouteDetailPageState extends State<RouteDetailPage> {
     );
   }
 
-  Widget _buildGlassCard(List<Widget> children) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(20),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-        child: Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.05),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: Colors.white.withOpacity(0.2)),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: children, // ← BURASI eksikti!
-          ),
-        ),
-      ),
-    );
-  }
+  // Widget _buildGlassCard(List<Widget> children) {
+  //   return ClipRRect(
+  //     borderRadius: BorderRadius.circular(20),
+  //     child: BackdropFilter(
+  //       filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+  //       child: Container(
+  //         width: double.infinity,
+  //         padding: const EdgeInsets.all(16),
+  //         decoration: BoxDecoration(
+  //           color: Colors.white.withOpacity(0.05),
+  //           borderRadius: BorderRadius.circular(20),
+  //           border: Border.all(color: Colors.white.withOpacity(0.2)),
+  //         ),
+  //         child: Column(
+  //           crossAxisAlignment: CrossAxisAlignment.start,
+  //           children: children, // ← BURASI eksikti!
+  //         ),
+  //       ),
+  //     ),
+  //   );
+  // }
 
   Future<void> toggleLike(int routeId) async {
     final prefs = await SharedPreferences.getInstance();
@@ -639,6 +718,7 @@ class _RouteDetailPageState extends State<RouteDetailPage> {
   Future<void> checkIfLiked() async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('access_token');
+    print("🔥 checkIfLiked(): token = $token");
 
     try {
       final response = await http.get(
@@ -675,13 +755,20 @@ class _RouteDetailPageState extends State<RouteDetailPage> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) {
-        return CommentsSheet(routeId: routeId, routeOwnerId: routeOwnerId);
+        return CommentsSheet(
+          routeId: routeId,
+          routeOwnerId: routeOwnerId,
+          onCommentAdded: () {
+            setState(() {
+              commentsCount++; // anlık arttır
+            });
+          },
+        );
       },
     );
 
     if (result == true) {
-      // Eğer yorum eklendi ya da silindiyse, tekrar veriyi çeker
-      _refreshRouteData();
+      _refreshRouteData(); // silme işlemi sonrası güncelleme
     }
   }
 }

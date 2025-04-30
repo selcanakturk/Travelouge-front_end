@@ -60,18 +60,22 @@ class _EditProfilePageState extends State<EditProfilePage> {
     final token = prefs.getString('access_token');
     final dio = Dio();
 
-    final formData = FormData.fromMap({
+    final formMap = <String, dynamic>{
       "first_name": _firstNameController.text,
       "last_name": _lastNameController.text,
       "username": _usernameController.text,
       "email": _emailController.text,
       "bio": _bioController.text,
-      "profile_picture": await MultipartFile.fromFile(
+    };
+
+    if (_profileImage != null) {
+      formMap["profile_picture"] = await MultipartFile.fromFile(
         _profileImage!.path,
         filename: _profileImage!.path.split('/').last,
-      ),
-    });
+      );
+    }
 
+    final formData = FormData.fromMap(formMap);
     try {
       final response = await dio.patch(
         // 👈 PATCH burada!
@@ -179,7 +183,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 const SizedBox(height: 16),
                 _buildTextField("E-posta", _emailController),
                 const SizedBox(height: 16),
-                _buildTextField("Açıklama", _bioController, maxLines: 3),
+                _buildTextField("Açıklama", _bioController,
+                    maxLines: 5, maxLength: 180),
                 const SizedBox(height: 30),
                 SizedBox(
                   width: double.infinity,
@@ -201,7 +206,18 @@ class _EditProfilePageState extends State<EditProfilePage> {
                               fontWeight: FontWeight.bold,
                             )),
                   ),
-                )
+                ),
+                const SizedBox(height: 20),
+                TextButton.icon(
+                  onPressed: () {
+                    Navigator.pushNamed(context, '/change-password');
+                  },
+                  icon: const Icon(Icons.lock_outline, color: Colors.white),
+                  label: const Text(
+                    "Şifreyi Değiştir",
+                    style: TextStyle(color: Colors.white),
+                  ),
+                ),
               ],
             ),
           ),
@@ -211,11 +227,12 @@ class _EditProfilePageState extends State<EditProfilePage> {
   }
 
   Widget _buildTextField(String label, TextEditingController controller,
-      {int maxLines = 1}) {
+      {int maxLines = 1, int? maxLength}) {
     return TextFormField(
       controller: controller,
       style: const TextStyle(color: Colors.white),
       maxLines: maxLines,
+      maxLength: maxLength,
       validator: (value) =>
           value == null || value.isEmpty ? "Bu alan zorunludur" : null,
       decoration: InputDecoration(

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:travelouge_frontend/core/constants/config.dart';
 import 'package:travelouge_frontend/features/route/screens/route_detail_screen.dart';
 import 'package:travelouge_frontend/widget/custom_bottom_nav.dart';
@@ -35,8 +36,15 @@ class _SearchPageState extends State<SearchPage> {
 
   Future<void> fetchRoutes(String query) async {
     try {
-      final response = await Dio().get('${Config.baseUrl}/routes/all/');
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString("access_token");
+
+      final dio = Dio();
+      dio.options.headers["Authorization"] = "Bearer $token";
+
+      final response = await dio.get('${Config.baseUrl}/routes/all/');
       final all = List<Map<String, dynamic>>.from(response.data);
+
       final results = all
           .where((route) => route['title']
               .toString()

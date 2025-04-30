@@ -100,13 +100,13 @@ class _TripsScreenState extends State<TripsScreen> {
       );
 
       List<dynamic> data = response.data;
-      List<Map<String, dynamic>> routes = [];
 
-      for (var route in data) {
-        if (route["is_deleted"] == true) continue;
+      // Verileri senkron hazırlayalım önce
+      final futures = data.map<Future<Map<String, dynamic>>>((route) async {
+        if (route["is_deleted"] == true) return {};
 
         final ownerId = route["user"] ?? route["user_id"] ?? route["owner"];
-        if (widget.userId != null && ownerId != widget.userId) continue;
+        if (widget.userId != null && ownerId != widget.userId) return {};
 
         String imageUrl = defaultImage;
         if (route["images"] != null &&
@@ -122,18 +122,25 @@ class _TripsScreenState extends State<TripsScreen> {
 
         String location =
             await _getLocationFromCoordinates(route["coordinates"]);
-        route["image"] = imageUrl;
-        route["location"] = location;
-        route["date"] = route["created_at"];
 
-        routes.add(route);
+        return {
+          ...route,
+          "image": imageUrl,
+          "location": location,
+          "date": route["created_at"],
+        };
+      }).toList();
+
+      final List<Map<String, dynamic>> routes =
+          (await Future.wait(futures)).where((e) => e.isNotEmpty).toList();
+
+      if (mounted) {
+        setState(() {
+          userRoutes = routes;
+        });
       }
-
-      setState(() {
-        userRoutes = routes;
-      });
     } catch (e) {
-      print("❌ Hata oluştu: $e");
+      print("❌ Rotalar alınamadı: $e");
     }
   }
 
@@ -162,7 +169,7 @@ class _TripsScreenState extends State<TripsScreen> {
             child: userRoutes.isEmpty
                 ? _buildEmptyState()
                 : GridView.builder(
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
                     gridDelegate:
                         const SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: 2,
@@ -178,80 +185,120 @@ class _TripsScreenState extends State<TripsScreen> {
           )
         ],
       ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       floatingActionButton: isOwner ? _buildFloatingButton() : null,
     );
   }
 
   Widget _buildProfileSection() {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
-        color: Colors.white.withOpacity(0.05),
-      ),
-      child: Row(
-        children: [
-          CircleAvatar(
-            radius: 30,
-            backgroundColor: Colors.grey[800],
-            backgroundImage:
-                profilePictureUrl != null && profilePictureUrl!.isNotEmpty
-                    ? NetworkImage(profilePictureUrl!)
-                    : const AssetImage('assets/png/default_profile.png')
-                        as ImageProvider,
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+    return Center(
+      child: Container(
+        width: MediaQuery.of(context).size.width * 0.9,
+        padding: const EdgeInsets.all(16),
+        margin: const EdgeInsets.only(top: 16, bottom: 8),
+        decoration: BoxDecoration(
+          color: Colors.deepPurple.withOpacity(0.03), // saydam arka plan
+          borderRadius: BorderRadius.circular(20),
+          border:
+              Border.all(color: Color(0xFF251E37), width: 5), // ince kenarlık
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
               children: [
-                Text(
-                  fullName.isNotEmpty ? fullName : "İsim yok",
-                  style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 17,
-                      fontWeight: FontWeight.w600),
+                CircleAvatar(
+                  radius: 32,
+                  backgroundColor: Colors.grey[800],
+                  backgroundImage:
+                      profilePictureUrl != null && profilePictureUrl!.isNotEmpty
+                          ? NetworkImage(profilePictureUrl!)
+                          : const AssetImage('assets/png/default_profile.png')
+                              as ImageProvider,
                 ),
-                Text(
-                  username.isNotEmpty ? '@$username' : "@unknown",
-                  style: const TextStyle(
-                      color: Colors.purpleAccent,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w400),
-                ),
-                Text(
-                  bio.isNotEmpty ? bio : "Açıklama yok",
-                  style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 15,
-                      fontStyle: FontStyle.italic),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        fullName.isNotEmpty ? fullName : "İsim yok",
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        username.isNotEmpty ? '@$username' : "@unknown",
+                        style: const TextStyle(
+                          color: Colors.purpleAccent,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
-          ),
-        ],
+            const SizedBox(height: 10),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                bio.isNotEmpty ? bio : "Profil açıklaması eklenmedi.",
+                // maxLines: 4,
+                // overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 15,
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildFloatingButton() {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 20.0, right: 12.0),
-      child: FloatingActionButton.extended(
-        onPressed: () async {
-          await Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => AddRouteScreen()),
-          );
-          fetchUserRoutes();
-        },
-        icon: const Icon(Icons.add, color: Colors.white),
-        label: const Text("Yeni Rota",
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-        backgroundColor: Colors.purple,
-        elevation: 10,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
+      child: SizedBox(
+        width: double.infinity,
+        height: 55,
+        child: OutlinedButton.icon(
+          onPressed: () async {
+            await Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => AddRouteScreen()),
+            );
+            fetchUserRoutes();
+          },
+          icon: const Icon(
+            Icons.add,
+            color: Colors.white,
+            size: 23,
+          ),
+          label: const Text(
+            "Yeni Rota",
+            style: TextStyle(
+              fontWeight: FontWeight.w700,
+              fontSize: 17,
+              letterSpacing: 0.5,
+              color: Colors.white,
+            ),
+          ),
+          style: OutlinedButton.styleFrom(
+            side: const BorderSide(color: Color(0xFF251E37), width: 5),
+            backgroundColor: Colors.deepPurple.withOpacity(0.2),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(18),
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+          ),
+        ),
       ),
     );
   }
@@ -279,7 +326,9 @@ class _TripsScreenState extends State<TripsScreen> {
   Widget _buildRouteCard(Map<String, dynamic> route) {
     final String imageUrl = route["image"].toString();
     final bool isNetwork = imageUrl.startsWith("http");
-
+    final String title = route["title"]?.toString() ?? "Başlıksız";
+    final String location = route["location"]?.toString() ?? "Konum yok";
+    final dynamic dateRaw = route["date"];
     return GestureDetector(
       onTap: () async {
         final result = await Navigator.push(
@@ -318,14 +367,18 @@ class _TripsScreenState extends State<TripsScreen> {
             Container(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [Colors.black.withOpacity(0.6), Colors.transparent],
                   begin: Alignment.bottomCenter,
                   end: Alignment.topCenter,
+                  colors: [
+                    Colors.black.withOpacity(0.6),
+                    Colors.black.withOpacity(0.2),
+                    Colors.transparent,
+                  ],
                 ),
               ),
             ),
             Padding(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
               child: Align(
                 alignment: Alignment.bottomLeft,
                 child: Column(
@@ -333,13 +386,19 @@ class _TripsScreenState extends State<TripsScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      route["title"],
+                      title,
                       style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                        shadows: [
+                          Shadow(
+                            color: Colors.black45,
+                            blurRadius: 4,
+                            offset: Offset(0, 2),
+                          )
+                        ],
+                      ),
                     ),
                     const SizedBox(height: 4),
                     Row(
@@ -349,7 +408,7 @@ class _TripsScreenState extends State<TripsScreen> {
                         const SizedBox(width: 4),
                         Expanded(
                           child: Text(
-                            route["location"],
+                            location,
                             style: const TextStyle(
                                 color: Colors.white70, fontSize: 13),
                             overflow: TextOverflow.ellipsis,
@@ -365,7 +424,7 @@ class _TripsScreenState extends State<TripsScreen> {
                         const SizedBox(width: 4),
                         Expanded(
                           child: Text(
-                            formatDate(route["date"]),
+                            formatDate(dateRaw),
                             style: const TextStyle(
                                 color: Colors.white70, fontSize: 13),
                             overflow: TextOverflow.ellipsis,

@@ -6,6 +6,7 @@ import 'package:travelouge_frontend/features/auth/screens/welcome_screen.dart';
 import 'package:travelouge_frontend/features/home/screens/home_page.dart';
 import 'package:travelouge_frontend/features/home/screens/search_screen.dart';
 import 'package:travelouge_frontend/features/profile/screens/account_screen.dart';
+import 'package:travelouge_frontend/features/profile/screens/change_password_screen.dart';
 import 'package:travelouge_frontend/features/route/screens/add_route_screen.dart';
 import 'package:travelouge_frontend/features/route/screens/trips_screen.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -34,6 +35,7 @@ class MyApp extends StatelessWidget {
         '/trips': (context) => TripsScreen(),
         '/add-route': (context) => AddRouteScreen(),
         '/account': (context) => AccountPage(),
+        '/change-password': (context) => const ChangePasswordPage(),
         '/search': (context) => SearchPage(),
       },
     );

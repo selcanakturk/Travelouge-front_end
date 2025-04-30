@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:ui';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -136,7 +137,7 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
             content: Text(
                 isEditMode ? "✅ Route updated" : "✅ Route added successfully")),
       );
-      Navigator.pop(context);
+      Navigator.pop(context, true);
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("❌ Failed to save route")),
@@ -202,22 +203,56 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
           children: [
             Text("Route Title", style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 8),
-            TextField(
-              controller: _titleController,
-              decoration: const InputDecoration(
-                hintText: "Enter route title",
-                border: OutlineInputBorder(),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(16),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.05),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.white.withOpacity(0.1)),
+                  ),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  child: TextField(
+                    controller: _titleController,
+                    style: const TextStyle(color: Colors.white),
+                    decoration: const InputDecoration(
+                      hintText: "Enter route title",
+                      hintStyle: TextStyle(color: Colors.white54),
+                      border: InputBorder.none,
+                    ),
+                  ),
+                ),
               ),
             ),
             const SizedBox(height: 20),
             Text("Description", style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 8),
-            TextField(
-              controller: _descriptionController,
-              maxLines: 3,
-              decoration: const InputDecoration(
-                hintText: "Describe your journey...",
-                border: OutlineInputBorder(),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(16),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.05),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.white.withOpacity(0.1)),
+                  ),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  child: TextField(
+                    controller: _descriptionController,
+                    maxLines: 3,
+                    style: const TextStyle(color: Colors.white),
+                    decoration: const InputDecoration(
+                      hintText: "Describe your journey...",
+                      hintStyle: TextStyle(color: Colors.white54),
+                      border: InputBorder.none,
+                    ),
+                  ),
+                ),
               ),
             ),
             const SizedBox(height: 24),
@@ -229,7 +264,8 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
                 height: 180,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.white24),
+                  color: Colors.white.withOpacity(0.05),
+                  border: Border.all(color: Colors.white70),
                 ),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(12),
@@ -290,118 +326,109 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
             const SizedBox(height: 8),
             TextButton.icon(
               onPressed: pickImages,
-              icon: const Icon(Icons.photo, color: Colors.purple),
+              icon: const Icon(Icons.photo, color: Colors.white),
               label: const Text(
                 "Select Photos",
                 style: TextStyle(
-                  color: Colors.purple,
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
                   fontSize: 16,
-                  fontWeight: FontWeight.w500,
                 ),
               ),
               style: TextButton.styleFrom(
-                backgroundColor: Colors.white.withOpacity(0.1),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                side: const BorderSide(color: Color(0xFF251E37), width: 5),
+                backgroundColor: Colors.deepPurple.withOpacity(0.2),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(18),
                 ),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               ),
             ),
             const SizedBox(height: 10),
             if (_networkImages.isNotEmpty || _images.isNotEmpty)
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  // Ağdan gelen resimler
-                  ..._networkImages.asMap().entries.map((entry) {
-                    int index = entry.key;
-                    String url = entry.value['url'];
-                    return Stack(
-                      children: [
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(12),
-                          child: Image.network(
-                            url,
-                            width: 160,
-                            height: 160,
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) =>
-                                const Icon(Icons.broken_image, size: 50),
+              GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  crossAxisSpacing: 12,
+                  mainAxisSpacing: 12,
+                  childAspectRatio: 1,
+                ),
+                itemCount: _networkImages.length + _images.length,
+                itemBuilder: (context, index) {
+                  bool isNetwork = index < _networkImages.length;
+                  return Stack(
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: isNetwork
+                            ? Image.network(
+                                _networkImages[index]['url'],
+                                width: double.infinity,
+                                height: double.infinity,
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) =>
+                                    const Icon(Icons.broken_image, size: 50),
+                              )
+                            : Image.file(
+                                File(_images[index - _networkImages.length]
+                                    .path),
+                                width: double.infinity,
+                                height: double.infinity,
+                                fit: BoxFit.cover,
+                              ),
+                      ),
+                      Positioned(
+                        top: 4,
+                        right: 4,
+                        child: Container(
+                          decoration: const BoxDecoration(
+                            color: Colors.black54,
+                            shape: BoxShape.circle,
                           ),
-                        ),
-                        Positioned(
-                          top: 4,
-                          right: 4,
-                          child: Container(
-                            decoration: const BoxDecoration(
-                              color: Colors.black54,
-                              shape: BoxShape.circle,
-                            ),
-                            child: IconButton(
-                              padding: EdgeInsets.zero,
-                              icon: const Icon(Icons.close,
-                                  size: 18, color: Colors.white),
-                              onPressed: () =>
-                                  _removeImage(index, isNetwork: true),
-                            ),
-                          ),
-                        ),
-                      ],
-                    );
-                  }),
-                  // Yeni seçilen local resimler
-                  ..._images.asMap().entries.map((entry) {
-                    int index = entry.key;
-                    XFile image = entry.value;
-                    return Stack(
-                      children: [
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(12),
-                          child: Image.file(
-                            File(image.path),
-                            width: 160,
-                            height: 160,
-                            fit: BoxFit.cover,
-                          ),
-                        ),
-                        Positioned(
-                          top: 4,
-                          right: 4,
-                          child: Container(
-                            decoration: const BoxDecoration(
-                              color: Colors.black54,
-                              shape: BoxShape.circle,
-                            ),
-                            child: IconButton(
-                              padding: EdgeInsets.zero,
-                              icon: const Icon(Icons.close,
-                                  size: 18, color: Colors.white),
-                              onPressed: () => _removeImage(index),
+                          child: IconButton(
+                            padding: EdgeInsets.zero,
+                            icon: const Icon(Icons.close,
+                                size: 18, color: Colors.white),
+                            onPressed: () => _removeImage(
+                              isNetwork ? index : index - _networkImages.length,
+                              isNetwork: isNetwork,
                             ),
                           ),
                         ),
-                      ],
-                    );
-                  }),
-                ],
+                      ),
+                    ],
+                  );
+                },
               )
             else
               const Text("No photos selected yet."),
             const SizedBox(height: 30),
-            Center(
-              child: ElevatedButton.icon(
+            SizedBox(
+              width: double.infinity,
+              height: 55,
+              child: OutlinedButton.icon(
                 onPressed: submitRoute,
-                icon: const Icon(Icons.check),
-                label: Text(isEditMode ? "Save" : "Add Route"),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.purple,
-                  foregroundColor: Colors.white,
+                icon: const Icon(Icons.check, color: Colors.white),
+                label: Text(
+                  isEditMode ? "Save" : "Add Route",
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 17,
+                    letterSpacing: 0.5,
+                    color: Colors.white,
+                  ),
+                ),
+                style: OutlinedButton.styleFrom(
+                  side: const BorderSide(color: Color(0xFF251E37), width: 5),
+                  backgroundColor: Colors.deepPurple.withOpacity(0.2),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(18),
+                  ),
                   padding:
                       const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20)),
                 ),
               ),
             ),

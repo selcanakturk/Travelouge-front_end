@@ -7,9 +7,14 @@ import 'package:travelouge_frontend/core/constants/config.dart';
 class CommentsSheet extends StatefulWidget {
   final int routeId;
   final int routeOwnerId;
+  final VoidCallback? onCommentAdded;
 
-  const CommentsSheet(
-      {super.key, required this.routeId, required this.routeOwnerId});
+  const CommentsSheet({
+    super.key,
+    required this.routeId,
+    required this.routeOwnerId,
+    this.onCommentAdded,
+  });
 
   @override
   State<CommentsSheet> createState() => _CommentsSheetState();
@@ -18,10 +23,12 @@ class CommentsSheet extends StatefulWidget {
 class _CommentsSheetState extends State<CommentsSheet> {
   List<dynamic> comments = [];
   final TextEditingController _commentController = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
   bool isLoading = true;
   int currentUserId = -1;
   late int routeOwnerId;
   int commentsCount = 0;
+
   @override
   void initState() {
     super.initState();
@@ -56,10 +63,21 @@ class _CommentsSheetState extends State<CommentsSheet> {
 
       if (response.statusCode == 201) {
         _commentController.clear();
-        Navigator.pop(context, true); // Yorum başarılı eklendiyse kapat
+        await _fetchComments(); // eksik veriden kaçınmak için tümünü tekrar çek
+
+        widget.onCommentAdded?.call(); // parent'a haber ver
+
+        Future.delayed(const Duration(milliseconds: 100), () {
+          if (_scrollController.hasClients) {
+            _scrollController.animateTo(
+              0,
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeOut,
+            );
+          }
+        });
       } else {
         print('Yorum eklenemedi: ${response.body}');
-        print('Status Code: ${response.statusCode}');
       }
     } catch (e) {
       print('Yorum eklenirken hata: $e');
@@ -82,8 +100,7 @@ class _CommentsSheetState extends State<CommentsSheet> {
         final List<dynamic> fetchedComments = json.decode(response.body);
         setState(() {
           comments = fetchedComments;
-          commentsCount =
-              fetchedComments.length; // YORUM SAYISI BURADA GÜNCELLENİR
+          commentsCount = fetchedComments.length;
           isLoading = false;
         });
       } else {
@@ -141,11 +158,8 @@ class _CommentsSheetState extends State<CommentsSheet> {
       if (response.statusCode == 204) {
         setState(() {
           comments.removeWhere((comment) => comment['id'] == commentId);
-          commentsCount = (commentsCount - 1)
-              .clamp(0, double.infinity)
-              .toInt(); // 🔥 yorum sayısını azalt
+          commentsCount = (commentsCount - 1).clamp(0, double.infinity).toInt();
         });
-        Navigator.pop(context, true);
       } else {
         print('Yorum silinemedi: ${response.body}');
       }
@@ -161,7 +175,7 @@ class _CommentsSheetState extends State<CommentsSheet> {
       minChildSize: 0.5,
       maxChildSize: 0.95,
       expand: false,
-      builder: (context, scrollController) {
+      builder: (_, __) {
         return Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
@@ -179,66 +193,93 @@ class _CommentsSheetState extends State<CommentsSheet> {
                 child: isLoading
                     ? const Center(child: CircularProgressIndicator())
                     : ListView.builder(
-                        controller: scrollController,
+                        controller: _scrollController,
                         itemCount: comments.length,
                         itemBuilder: (context, index) {
                           final comment = comments[index];
-                          return ListTile(
-                            leading: CircleAvatar(
-                              backgroundImage:
-                                  comment['profile_picture'] != null
+                          return Container(
+                            margin: const EdgeInsets.only(bottom: 12),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.05),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                CircleAvatar(
+                                  radius: 20,
+                                  backgroundImage: comment['profile_picture'] !=
+                                          null
                                       ? NetworkImage(comment['profile_picture'])
                                       : const AssetImage(
                                               'assets/png/default_profile.png')
                                           as ImageProvider,
-                            ),
-                            title: Text(
-                              comment['username'] ?? 'Unknown',
-                              style: const TextStyle(color: Colors.white),
-                            ),
-                            subtitle: Text(
-                              comment['text'] ?? '',
-                              style: const TextStyle(
-                                  color: Colors.white70,
-                                  fontSize: 16), // yazı fontu büyütüldü
-                            ),
-                            trailing: (comment['user_id'] == currentUserId ||
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        comment['username'] ?? 'Unknown',
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        comment['text'] ?? '',
+                                        style: const TextStyle(
+                                            color: Colors.white70),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                if (comment['user_id'] == currentUserId ||
                                     routeOwnerId == currentUserId)
-                                ? IconButton(
+                                  IconButton(
                                     icon: const Icon(Icons.delete,
                                         color: Colors.redAccent),
                                     onPressed: () =>
                                         _deleteComment(comment['id']),
-                                  )
-                                : null,
+                                  ),
+                              ],
+                            ),
                           );
                         },
                       ),
               ),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _commentController,
-                      style: const TextStyle(color: Colors.white),
-                      decoration: InputDecoration(
-                        hintText: 'Write a comment...',
-                        hintStyle: TextStyle(color: Colors.white54),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.05),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _commentController,
+                        style: const TextStyle(color: Colors.white),
+                        decoration: const InputDecoration(
+                          hintText: 'Write a comment...',
+                          hintStyle: TextStyle(color: Colors.white54),
+                          border: InputBorder.none,
                         ),
-                        filled: true,
-                        fillColor: Colors.white10,
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  IconButton(
-                    icon: const Icon(Icons.send, color: Colors.white),
-                    onPressed: _addComment,
-                  )
-                ],
-              )
+                    IconButton(
+                      icon: const Icon(Icons.send, color: Colors.white),
+                      onPressed: _addComment,
+                    ),
+                  ],
+                ),
+              ),
             ],
           ),
         );
