@@ -10,6 +10,7 @@ import 'package:travelouge_frontend/core/constants/config.dart';
 import 'package:travelouge_frontend/features/route/screens/add_route_screen.dart';
 import 'package:travelouge_frontend/features/route/screens/trips_screen.dart';
 import 'package:travelouge_frontend/widget/comment_sheet.dart';
+import 'package:travelouge_frontend/widget/custom_app_bar.dart';
 import 'route_preview_map_screen.dart';
 import 'package:travelouge_frontend/widget/custom_snackbar.dart';
 
@@ -188,7 +189,7 @@ class _RouteDetailPageState extends State<RouteDetailPage> {
                   child: IconButton(
                     icon:
                         const Icon(Icons.close, color: Colors.white, size: 26),
-                    onPressed: () => Navigator.pop(context),
+                    onPressed: () => Navigator.pop(context, true),
                   ),
                 )
               ],
@@ -330,8 +331,14 @@ class _RouteDetailPageState extends State<RouteDetailPage> {
     final profilePictureUrl = route["profile_picture"];
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(route["title"] ?? "Route Detail"),
+      appBar: CustomAppBar(
+        title: "Route Detail",
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () {
+            Navigator.pop(context, true); // değişiklik bildirimi
+          },
+        ),
       ),
       body: ListView(
         padding: const EdgeInsets.all(0),
@@ -658,28 +665,6 @@ class _RouteDetailPageState extends State<RouteDetailPage> {
       ),
     );
   }
-
-  // Widget _buildGlassCard(List<Widget> children) {
-  //   return ClipRRect(
-  //     borderRadius: BorderRadius.circular(20),
-  //     child: BackdropFilter(
-  //       filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-  //       child: Container(
-  //         width: double.infinity,
-  //         padding: const EdgeInsets.all(16),
-  //         decoration: BoxDecoration(
-  //           color: Colors.white.withOpacity(0.05),
-  //           borderRadius: BorderRadius.circular(20),
-  //           border: Border.all(color: Colors.white.withOpacity(0.2)),
-  //         ),
-  //         child: Column(
-  //           crossAxisAlignment: CrossAxisAlignment.start,
-  //           children: children, // ← BURASI eksikti!
-  //         ),
-  //       ),
-  //     ),
-  //   );
-  // }
 
   Future<void> toggleLike(int routeId) async {
     final prefs = await SharedPreferences.getInstance();

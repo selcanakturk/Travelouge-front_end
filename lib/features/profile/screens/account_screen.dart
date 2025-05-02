@@ -82,7 +82,8 @@ class _AccountPageState extends State<AccountPage> {
 
   Future<void> logOut(BuildContext context) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.clear();
+    prefs.remove("access_token");
+    prefs.remove("user_id");
     Navigator.pushReplacementNamed(context, '/welcome');
   }
 

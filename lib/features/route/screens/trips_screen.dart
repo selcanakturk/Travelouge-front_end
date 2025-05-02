@@ -118,6 +118,8 @@ class _TripsScreenState extends State<TripsScreen> {
               : raw.startsWith("/")
                   ? "${Config.baseUrl}$raw"
                   : "${Config.baseUrl}/$raw";
+          //force image refesh
+          imageUrl = "$imageUrl?v=${DateTime.now().millisecondsSinceEpoch}";
         }
 
         String location =
@@ -270,11 +272,14 @@ class _TripsScreenState extends State<TripsScreen> {
         height: 55,
         child: OutlinedButton.icon(
           onPressed: () async {
-            await Navigator.push(
+            final result = await Navigator.push(
               context,
               MaterialPageRoute(builder: (context) => AddRouteScreen()),
             );
-            fetchUserRoutes();
+
+            if (result == true) {
+              await fetchUserRoutes(); // Rotaları tekrar çek
+            }
           },
           icon: const Icon(
             Icons.add,
@@ -337,9 +342,9 @@ class _TripsScreenState extends State<TripsScreen> {
             builder: (context) => RouteDetailPage(route: route),
           ),
         );
-
+        // Eğer dönüşte true geldiyse veriyi yenile
         if (result == true) {
-          fetchUserRoutes();
+          await fetchUserRoutes();
         }
       },
       child: ClipRRect(

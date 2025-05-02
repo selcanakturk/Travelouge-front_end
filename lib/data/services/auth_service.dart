@@ -4,7 +4,7 @@ import 'package:travelouge_frontend/core/constants/config.dart';
 
 class AuthService {
   final url = "${Config.baseUrl}/";
-  // 🚀 Kayıt olma
+  // Kayıt olma
   Future<bool> signUp(
     String username,
     String email,
