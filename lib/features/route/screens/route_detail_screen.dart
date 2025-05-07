@@ -27,6 +27,8 @@ class _RouteDetailPageState extends State<RouteDetailPage> {
   List<String> imageUrls = [];
   List<osm.LatLng> coordinates = [];
   bool isLiked = false;
+  bool isSaved = false;
+  bool isSavedChanged = false;
   int likesCount = 0;
   int commentsCount = 0;
   int currentIndex = 0;
@@ -40,9 +42,10 @@ class _RouteDetailPageState extends State<RouteDetailPage> {
   }
 
   Future<void> _initPage() async {
-    await _refreshRouteData(); // önce sunucudan route verisini çek
-    await checkIfLiked(); // sonra beğeni durumu çek
-    await _loadData(); // en son state güncelle
+    await _refreshRouteData(); // önce veriyi çek
+    await checkIfLiked(); // beğeni kontrolü
+    await checkIfSaved(); // kaydetme kontrolü
+    await _loadData(); // state güncelle
   }
 
   Future<void> _loadData() async {
@@ -336,7 +339,7 @@ class _RouteDetailPageState extends State<RouteDetailPage> {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () {
-            Navigator.pop(context, true); // değişiklik bildirimi
+            Navigator.pop(context, isSavedChanged); // değişiklik bildirimi
           },
         ),
       ),
@@ -599,6 +602,15 @@ class _RouteDetailPageState extends State<RouteDetailPage> {
                         ],
                       ),
                     ),
+                    const SizedBox(width: 12),
+                    GestureDetector(
+                      onTap: () => toggleSave(widget.route['id']),
+                      child: Icon(
+                        isSaved ? Icons.bookmark : Icons.bookmark_border,
+                        color: isSaved ? Colors.white : Colors.white,
+                        size: 25,
+                      ),
+                    ),
                   ],
                 ),
                 Row(
@@ -723,6 +735,61 @@ class _RouteDetailPageState extends State<RouteDetailPage> {
       }
     } catch (e) {
       print('Beğeni durumu çekilirken hata: $e');
+    }
+  }
+
+  Future<void> checkIfSaved() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('access_token');
+
+    try {
+      final response = await http.get(
+        Uri.parse('${Config.baseUrl}/routes/${widget.route['id']}/is-saved/'),
+        headers: {
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(utf8.decode(response.bodyBytes));
+        setState(() {
+          isSaved = data['is_saved'] ?? false;
+        });
+      } else {
+        print('Kaydedilme durumu kontrol edilemedi: ${response.body}');
+      }
+    } catch (e) {
+      print('Kaydedilme durumu çekilirken hata: $e');
+    }
+  }
+
+  Future<void> toggleSave(int routeId) async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('access_token');
+    final url = Uri.parse('${Config.baseUrl}/routes/$routeId/save/');
+
+    try {
+      final response = await http.post(
+        url,
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final data = json.decode(utf8.decode(response.bodyBytes));
+        final saved = data['saved'];
+
+        setState(() {
+          isSaved = saved;
+          isSavedChanged = true;
+        });
+      } else {
+        print('Kaydetme işlemi başarısız: ${response.body}');
+      }
+    } catch (e) {
+      print('Kaydetme hatası: $e');
     }
   }
 

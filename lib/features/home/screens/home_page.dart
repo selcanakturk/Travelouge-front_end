@@ -1,10 +1,10 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
-import 'package:geolocator/geolocator.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:travelouge_frontend/core/constants/config.dart';
 import 'package:travelouge_frontend/features/route/screens/route_detail_screen.dart';
-import 'package:travelouge_frontend/widget/custom_app_bar.dart';
+//import 'package:travelouge_frontend/widget/custom_app_bar.dart';
 import 'package:travelouge_frontend/widget/custom_bottom_nav.dart';
 
 class HomePage extends StatefulWidget {
@@ -15,13 +15,17 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  final TextEditingController _searchController = TextEditingController();
+  //final TextEditingController _searchController = TextEditingController();
   List<Map<String, dynamic>> popularRoutes = [];
+  List<Map<String, dynamic>> suggestedRoutes = [];
+  List<Map<String, dynamic>> savedRoutes = [];
 
   @override
   void initState() {
     super.initState();
     fetchPopularRoutes();
+    fetchSuggestedRoutes();
+    fetchSavedRoutes();
   }
 
   Future<void> fetchPopularRoutes() async {
@@ -33,71 +37,65 @@ class _HomePageState extends State<HomePage> {
         });
       }
     } catch (e) {
-      print("❌ Popüler rotalar çekilemedi: $e");
+      print("❌ Failed to fetch popular routes: $e");
     }
   }
 
-  Future<void> _determinePosition(BuildContext context) async {
-    bool serviceEnabled;
-    LocationPermission permission;
+  Future<void> fetchSuggestedRoutes() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString("access_token");
 
-    serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Konum servisleri kapalı.')),
+      final dio = Dio();
+      dio.options.headers["Authorization"] = "Bearer $token";
+
+      final response = await dio.get(
+        '${Config.baseUrl}/routes/suggested/?t=${DateTime.now().millisecondsSinceEpoch}',
       );
-      return;
-    }
-
-    permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Konum izni reddedildi.')),
-        );
-        return;
+      if (response.statusCode == 200) {
+        setState(() {
+          suggestedRoutes = List<Map<String, dynamic>>.from(response.data);
+        });
       }
+    } catch (e) {
+      print("❌ Failed to fetch suggested routes: $e");
     }
+  }
 
-    if (permission == LocationPermission.deniedForever) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Konum izni kalıcı olarak reddedildi.')),
-      );
-      return;
+  Future<void> fetchSavedRoutes() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString("access_token");
+
+      final dio = Dio();
+      dio.options.headers["Authorization"] = "Bearer $token";
+
+      final response = await dio.get('${Config.baseUrl}/routes/saved/');
+      if (response.statusCode == 200) {
+        setState(() {
+          savedRoutes = List<Map<String, dynamic>>.from(response.data);
+        });
+      }
+    } catch (e) {
+      print("❌ Failed to fetch saved routes: $e");
     }
-
-    Position position = await Geolocator.getCurrentPosition();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content:
-            Text('Konum alındı: ${position.latitude}, ${position.longitude}'),
-      ),
-    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: CustomAppBar(
-        title: "Where would you like to go?",
-        leading: const Icon(Icons.location_on, color: Colors.white),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications, color: Colors.white),
-            onPressed: () {
-              // Bildirim butonu aksiyonu
-            },
-          ),
-        ],
-      ),
+      // appBar: CustomAppBar(
+      //   title: "Home",
+      //   leading: null,
+      //   actions: [],
+      // ),
       backgroundColor: Colors.black,
       body: Stack(
         children: [
-          // Arkadaki görsel + blur
+          // Background image + blur
           Positioned.fill(
             child: Image.asset(
-              'assets/png/header2.jpg', // Kendi görseline göre değiştir
+              'assets/png/header2.jpg',
               fit: BoxFit.cover,
             ),
           ),
@@ -109,7 +107,7 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
           ),
-          // Asıl içerik
+          // Main content
           SafeArea(
             child: Column(
               children: [
@@ -124,38 +122,26 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildSearchBar() {
-    return TextField(
-      controller: _searchController,
-      style: const TextStyle(color: Colors.white),
-      decoration: InputDecoration(
-        hintText: 'Gezilecek yerleri arayın...',
-        hintStyle: const TextStyle(color: Colors.white70),
-        prefixIcon: const Icon(Icons.search, color: Colors.white70),
-        filled: true,
-        fillColor: Colors.white12,
-        border: OutlineInputBorder(
+    return GestureDetector(
+      onTap: () {
+        Navigator.pushNamed(context, '/search');
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+        decoration: BoxDecoration(
+          color: Colors.white12,
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
         ),
-      ),
-    );
-  }
-
-  Widget _buildLocationSearch(BuildContext context) {
-    return ElevatedButton(
-      onPressed: () => _determinePosition(context),
-      style: ElevatedButton.styleFrom(
-        backgroundColor: Colors.white12,
-        padding: const EdgeInsets.all(12),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      ),
-      child: const Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.place, color: Colors.white),
-          SizedBox(width: 10),
-          Text('Konuma göre ara', style: TextStyle(color: Colors.white)),
-        ],
+        child: Row(
+          children: const [
+            Icon(Icons.search, color: Colors.white70),
+            SizedBox(width: 10),
+            Text(
+              "Search for places to explore...",
+              style: TextStyle(color: Colors.white70, fontSize: 16),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -169,13 +155,18 @@ class _HomePageState extends State<HomePage> {
         itemBuilder: (context, index) {
           final route = routes[index];
           return GestureDetector(
-            onTap: () {
-              Navigator.push(
+            onTap: () async {
+              final result = await Navigator.push(
                 context,
                 MaterialPageRoute(
                   builder: (_) => RouteDetailPage(route: route),
                 ),
               );
+
+              if (result == true) {
+                await fetchSavedRoutes();
+                setState(() {});
+              }
             },
             child: buildPopularRouteCard(route),
           );
@@ -193,7 +184,7 @@ class _HomePageState extends State<HomePage> {
             : '${Config.baseUrl}${route['images'][0]['image']}')
         : 'assets/png/default.png';
 
-    final routeTitle = route['title'] ?? "Başlıksız";
+    final routeTitle = route['title'] ?? "Untitled";
     final username = route['username'] ?? "unknown_user";
     final likes = route['likes_count']?.toString() ?? "0";
     final comments = route['comments_count']?.toString() ?? "0";
@@ -286,47 +277,58 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildPlaceholderList() {
-    return SizedBox(
-      height: 300,
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        itemCount: 4,
-        itemBuilder: (context, index) {
-          return Container(
-            width: 140,
-            margin: const EdgeInsets.only(right: 12),
-            decoration: BoxDecoration(
-              color: Colors.white12,
-              borderRadius: BorderRadius.circular(12),
-            ),
-          );
-        },
-      ),
+  Widget _buildSuggestedRoutesList(List<Map<String, dynamic>> routes) {
+    if (routes.isEmpty) {
+      return const SizedBox();
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text("Explore",
+                style: TextStyle(fontSize: 20, color: Colors.white)),
+            IconButton(
+              icon: const Icon(Icons.refresh, color: Colors.white),
+              tooltip: "Refresh",
+              onPressed: () async {
+                await fetchSuggestedRoutes();
+              },
+            )
+          ],
+        ),
+        const SizedBox(height: 10),
+        SizedBox(
+          height: 300,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            itemCount: routes.length,
+            itemBuilder: (context, index) {
+              final route = routes[index];
+              return GestureDetector(
+                onTap: () async {
+                  final result = await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => RouteDetailPage(route: route),
+                    ),
+                  );
+
+                  if (result == true) {
+                    await fetchSavedRoutes();
+                    setState(() {});
+                  }
+                },
+                child: buildPopularRouteCard(route),
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
-
-  // Widget _buildAppBar() {
-  //   return Padding(
-  //     padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10),
-  //     child: Row(
-  //       children: [
-  //         const Icon(Icons.location_on, color: Colors.white),
-  //         const SizedBox(width: 8),
-  //         const Expanded(
-  //           child: Text(
-  //             "Nereye gitmek istiyorsunuz?",
-  //             style: TextStyle(fontSize: 22, color: Colors.white),
-  //           ),
-  //         ),
-  //         IconButton(
-  //           icon: const Icon(Icons.notifications, color: Colors.white),
-  //           onPressed: () {},
-  //         ),
-  //       ],
-  //     ),
-  //   );
-  // }
 
   Widget _buildBody() {
     return SingleChildScrollView(
@@ -334,21 +336,76 @@ class _HomePageState extends State<HomePage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          const Text(
+            "Where would you like to go?",
+            style: TextStyle(
+              fontSize: 30,
+              fontWeight: FontWeight.w900,
+              color: Colors.white,
+              height: 1.3,
+            ),
+          ),
+          const SizedBox(height: 30),
           _buildSearchBar(),
-          const SizedBox(height: 20),
-          _buildLocationSearch(context),
-          const SizedBox(height: 20),
-          const Text("Popüler Rotalar",
+          const SizedBox(height: 30),
+          const Text("Popular Routes",
               style: TextStyle(fontSize: 20, color: Colors.white)),
-          const SizedBox(height: 10),
+          const SizedBox(height: 20),
           _buildPopularRoutesList(popularRoutes),
           const SizedBox(height: 20),
-          const Text("Son incelenenler",
-              style: TextStyle(fontSize: 20, color: Colors.white)),
-          const SizedBox(height: 10),
-          _buildPlaceholderList(),
+          _buildSuggestedRoutesList(suggestedRoutes),
+          const SizedBox(height: 30),
+          _buildSavedRoutesSection(savedRoutes),
         ],
       ),
+    );
+  }
+
+  Widget _buildSavedRoutesSection(List<Map<String, dynamic>> routes) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text("Saved Routes",
+            style: TextStyle(fontSize: 20, color: Colors.white)),
+        const SizedBox(height: 10),
+        if (routes.isEmpty)
+          const Padding(
+            padding: EdgeInsets.only(top: 10),
+            child: Center(
+              child: Text(
+                "You haven't saved any routes yet.",
+                style: TextStyle(color: Colors.white70, fontSize: 16),
+              ),
+            ),
+          )
+        else
+          SizedBox(
+            height: 300,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              itemCount: routes.length,
+              itemBuilder: (context, index) {
+                final route = routes[index];
+                return GestureDetector(
+                  onTap: () async {
+                    final result = await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => RouteDetailPage(route: route),
+                      ),
+                    );
+
+                    if (result == true) {
+                      await fetchSavedRoutes();
+                      setState(() {});
+                    }
+                  },
+                  child: buildPopularRouteCard(route),
+                );
+              },
+            ),
+          ),
+      ],
     );
   }
 }

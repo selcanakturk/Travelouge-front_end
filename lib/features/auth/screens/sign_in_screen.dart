@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:travelouge_frontend/data/services/auth_service.dart';
+import 'package:travelouge_frontend/features/auth/screens/forgot_password_page.dart';
 
 class SignInPage extends StatefulWidget {
   const SignInPage({super.key});
@@ -69,7 +70,13 @@ class _SignInPageState extends State<SignInPage> {
               Align(
                 alignment: Alignment.centerRight,
                 child: TextButton(
-                  onPressed: () {},
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (_) => const ForgotPasswordPage()),
+                    );
+                  },
                   child: const Text("Forgot your password?",
                       style: TextStyle(color: Colors.white)),
                 ),

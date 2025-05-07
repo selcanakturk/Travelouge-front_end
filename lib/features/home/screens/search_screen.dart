@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
+import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:travelouge_frontend/core/constants/config.dart';
 import 'package:travelouge_frontend/features/route/screens/route_detail_screen.dart';
@@ -25,9 +26,44 @@ class _SearchPageState extends State<SearchPage> {
     _loadRecentRoutes();
   }
 
+  Future<String?> _getUsernameFromToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString("access_token");
+    if (token == null) return null;
+
+    final parts = token.split('.');
+    if (parts.length != 3) return null;
+
+    final payload = parts[1];
+    final normalized = base64.normalize(payload);
+    final decoded = utf8.decode(base64.decode(normalized));
+    final data = json.decode(decoded);
+    return data['username'];
+  }
+
+  Future<void> _logSearchTerm(String term) async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString("access_token");
+
+    if (token == null || term.isEmpty) return;
+
+    try {
+      await Dio().post(
+        '${Config.baseUrl}/routes/search-log/',
+        data: {'term': term},
+        options: Options(
+          headers: {"Authorization": "Bearer $token"},
+        ),
+      );
+    } catch (e) {
+      print("❌ Arama terimi loglanamadı: $e");
+    }
+  }
+
   void _onSearchChanged() {
     final query = _searchController.text.trim();
     if (query.isNotEmpty) {
+      _logSearchTerm(query);
       fetchRoutes(query);
     } else {
       setState(() {
@@ -38,6 +74,8 @@ class _SearchPageState extends State<SearchPage> {
 
   void _clearRecentRoutes() async {
     final prefs = await SharedPreferences.getInstance();
+    final username = await _getUsernameFromToken();
+    if (username == null) return;
     await prefs.remove('recent_routes');
     setState(() {
       recentRoutes.clear();
@@ -72,7 +110,11 @@ class _SearchPageState extends State<SearchPage> {
   }
 
   Future<void> _saveToRecent(Map<String, dynamic> route) async {
+    print("📌 Save to recent çağrıldı");
     final prefs = await SharedPreferences.getInstance();
+    final username = await _getUsernameFromToken();
+    print("👤 Aktif kullanıcı: $username");
+    if (username == null) return;
 
     String rawImage = '';
     if (route['images'] != null &&
@@ -92,7 +134,6 @@ class _SearchPageState extends State<SearchPage> {
       'image': rawImage,
     };
 
-    // Listeyi güncelle
     setState(() {
       recentRoutes.removeWhere((r) => r['id'] == customRoute['id']);
       recentRoutes.insert(0, {
@@ -115,12 +156,15 @@ class _SearchPageState extends State<SearchPage> {
       }).query;
     }).toList();
 
-    await prefs.setStringList('recent_routes', encodedList);
+    await prefs.setStringList('recent_routes_$username', encodedList);
   }
 
   void _loadRecentRoutes() async {
     final prefs = await SharedPreferences.getInstance();
-    final recentData = prefs.getStringList('recent_routes') ?? [];
+    final username = await _getUsernameFromToken();
+    if (username == null) return;
+
+    final recentData = prefs.getStringList('recent_routes_$username') ?? [];
 
     setState(() {
       recentRoutes = recentData.map((item) {
@@ -144,9 +188,13 @@ class _SearchPageState extends State<SearchPage> {
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        title: const Text("Search", style: TextStyle(color: Colors.white)),
-        iconTheme: const IconThemeData(color: Colors.white),
+        title: const Text("Search"),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            Navigator.pushReplacementNamed(context, '/home');
+          },
+        ),
       ),
       bottomNavigationBar: const CustomBottomNav(currentIndex: 1),
       body: Padding(

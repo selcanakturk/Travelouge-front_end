@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:travelouge_frontend/app_theme.dart';
+import 'package:travelouge_frontend/features/auth/screens/reset_password_page.dart';
 import 'package:travelouge_frontend/features/auth/screens/sign_in_screen.dart';
 import 'package:travelouge_frontend/features/auth/screens/sign_up_screen.dart';
 import 'package:travelouge_frontend/features/auth/screens/welcome_screen.dart';
@@ -37,6 +38,14 @@ class MyApp extends StatelessWidget {
         '/account': (context) => AccountPage(),
         '/change-password': (context) => const ChangePasswordPage(),
         '/search': (context) => SearchPage(),
+        '/reset-password': (context) {
+          final args =
+              ModalRoute.of(context)!.settings.arguments as Map<String, String>;
+          return ResetPasswordPage(
+            uid: args['uid']!,
+            token: args['token']!,
+          );
+        },
       },
     );
   }
