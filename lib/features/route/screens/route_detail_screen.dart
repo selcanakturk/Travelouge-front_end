@@ -29,6 +29,7 @@ class _RouteDetailPageState extends State<RouteDetailPage> {
   bool isLiked = false;
   bool isSaved = false;
   bool isSavedChanged = false;
+  bool isExpanded = false;
   int likesCount = 0;
   int commentsCount = 0;
   int currentIndex = 0;
@@ -335,7 +336,7 @@ class _RouteDetailPageState extends State<RouteDetailPage> {
 
     return Scaffold(
       appBar: CustomAppBar(
-        title: "Route Detail",
+        title: "View Route",
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () {
@@ -446,11 +447,34 @@ class _RouteDetailPageState extends State<RouteDetailPage> {
                                 fontSize: 20,
                                 fontWeight: FontWeight.bold)),
                         const SizedBox(height: 6),
-                        Text(route["description"] ?? "",
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 17,
-                            )),
+                        Text(
+                          route["description"] ?? "",
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 17,
+                          ),
+                          maxLines: isExpanded ? null : 1,
+                          overflow: isExpanded
+                              ? TextOverflow.visible
+                              : TextOverflow.ellipsis,
+                        ),
+                        if ((route["description"] ?? "").toString().length >
+                            100)
+                          GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                isExpanded = !isExpanded;
+                              });
+                            },
+                            child: Text(
+                              isExpanded ? "Show less" : "Read more",
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 15,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
                       ],
                     ),
                   ),

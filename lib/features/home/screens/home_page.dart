@@ -37,7 +37,7 @@ class _HomePageState extends State<HomePage> {
         });
       }
     } catch (e) {
-      print("❌ Failed to fetch popular routes: $e");
+      print("Failed to fetch popular routes: $e");
     }
   }
 
@@ -58,7 +58,7 @@ class _HomePageState extends State<HomePage> {
         });
       }
     } catch (e) {
-      print("❌ Failed to fetch suggested routes: $e");
+      print("Failed to fetch suggested routes: $e");
     }
   }
 
@@ -77,7 +77,7 @@ class _HomePageState extends State<HomePage> {
         });
       }
     } catch (e) {
-      print("❌ Failed to fetch saved routes: $e");
+      print("Failed to fetch saved routes: $e");
     }
   }
 

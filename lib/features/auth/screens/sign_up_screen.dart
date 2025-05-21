@@ -50,6 +50,19 @@ class _SignUpPageState extends State<SignUpPage> {
       backgroundColor: Colors.black,
       body: Stack(
         children: [
+          Positioned.fill(
+            child: Image.asset(
+              'assets/png/header2.jpg',
+              fit: BoxFit.cover,
+            ),
+          ),
+
+          // Dark overlay for readability
+          Positioned.fill(
+            child: Container(
+              color: Colors.black.withOpacity(0.85),
+            ),
+          ),
           Padding(
             padding: const EdgeInsets.all(20.0),
             child: Form(
@@ -60,11 +73,11 @@ class _SignUpPageState extends State<SignUpPage> {
                   const Text(
                     "Create Account",
                     style: TextStyle(
-                        fontSize: 26,
+                        fontSize: 28,
                         fontWeight: FontWeight.bold,
                         color: Colors.white),
                   ),
-                  const SizedBox(height: 30),
+                  const SizedBox(height: 50),
                   _buildTextField("First Name", _firstNameController,
                       (v) => v!.isEmpty ? "First name is required" : null),
                   const SizedBox(height: 12),
@@ -91,7 +104,7 @@ class _SignUpPageState extends State<SignUpPage> {
                     }
                     return null;
                   }, isPassword: true),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 100),
                   SizedBox(
                     width: double.infinity,
                     height: 50,
@@ -105,7 +118,7 @@ class _SignUpPageState extends State<SignUpPage> {
                       child: const Text(
                         "Sign Up",
                         style: TextStyle(
-                            fontSize: 16,
+                            fontSize: 17,
                             color: Colors.black,
                             fontWeight: FontWeight.bold),
                       ),
@@ -115,7 +128,7 @@ class _SignUpPageState extends State<SignUpPage> {
               ),
             ),
           ),
-          // 🔙 Back Button
+          // Back Button
           Positioned(
             top: 40,
             left: 10,
@@ -144,16 +157,29 @@ class _SignUpPageState extends State<SignUpPage> {
         hintText: hint,
         hintStyle: const TextStyle(color: Colors.white70),
         filled: true,
-        fillColor: Colors.white.withOpacity(0.1),
-        border: OutlineInputBorder(
+        fillColor: Colors.white.withOpacity(0.05),
+        enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
+          borderSide: const BorderSide(color: Colors.white24, width: 1.3),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Colors.white, width: 1.7),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Colors.redAccent, width: 1.5),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Colors.redAccent, width: 1.5),
         ),
         suffixIcon: isPassword
             ? IconButton(
                 icon: Icon(
-                    _obscurePassword ? Icons.visibility_off : Icons.visibility,
-                    color: Colors.white70),
+                  _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                  color: Colors.white70,
+                ),
                 onPressed: () =>
                     setState(() => _obscurePassword = !_obscurePassword),
               )

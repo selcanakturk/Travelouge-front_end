@@ -126,12 +126,12 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("Profil başarıyla güncellendi.")),
+            const SnackBar(content: Text("Profile updated successfully.")),
           );
           Navigator.pop(context, true);
         }
       } else {
-        throw Exception("Güncelleme hatası");
+        throw Exception("Failed to update profile.");
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -148,8 +148,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
-        title: const Text("Profili Düzenle",
-            style: TextStyle(color: Colors.white)),
+        title:
+            const Text("Edit Profile", style: TextStyle(color: Colors.white)),
         backgroundColor: Colors.transparent,
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.white),
@@ -163,59 +163,83 @@ class _EditProfilePageState extends State<EditProfilePage> {
               children: [
                 GestureDetector(
                   onTap: _pickImage,
-                  child: CircleAvatar(
-                    radius: 50,
-                    backgroundImage: _profileImage != null
-                        ? FileImage(_profileImage!)
-                        : (_profileImageUrl != null &&
-                                _profileImageUrl!.startsWith("http"))
-                            ? NetworkImage(_profileImageUrl!)
-                            : const AssetImage("assets/png/default_profile.png")
-                                as ImageProvider,
+                  child: Container(
+                    padding: const EdgeInsets.all(3),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: Colors.deepPurple,
+                        width: 3,
+                      ),
+                    ),
+                    child: CircleAvatar(
+                      radius: 50,
+                      backgroundImage: _profileImage != null
+                          ? FileImage(_profileImage!)
+                          : (_profileImageUrl != null &&
+                                  _profileImageUrl!.startsWith("http"))
+                              ? NetworkImage(_profileImageUrl!)
+                              : const AssetImage(
+                                      "assets/png/default_profile.png")
+                                  as ImageProvider,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 20),
-                _buildTextField("Ad", _firstNameController),
+                _buildTextField("First Name", _firstNameController),
                 const SizedBox(height: 16),
-                _buildTextField("Soyad", _lastNameController),
+                _buildTextField("Last Name", _lastNameController),
                 const SizedBox(height: 16),
-                _buildTextField("Kullanıcı Adı", _usernameController),
+                _buildTextField("Username", _usernameController),
                 const SizedBox(height: 16),
-                _buildTextField("E-posta", _emailController),
+                _buildTextField("Email", _emailController),
                 const SizedBox(height: 16),
-                _buildTextField("Açıklama", _bioController,
+                _buildTextField("Bio", _bioController,
                     maxLines: 5, maxLength: 180),
-                const SizedBox(height: 30),
+                const SizedBox(height: 20),
                 SizedBox(
                   width: double.infinity,
                   height: 48,
-                  child: ElevatedButton(
+                  child: OutlinedButton.icon(
                     onPressed: _isLoading ? null : _updateProfile,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.purple,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                    ),
-                    child: _isLoading
-                        ? const CircularProgressIndicator(color: Colors.white)
-                        : const Text("Kaydet",
+                    icon: const Icon(Icons.check, color: Colors.white),
+                    label: _isLoading
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                                color: Colors.white, strokeWidth: 2),
+                          )
+                        : const Text(
+                            "Save",
                             style: TextStyle(
-                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                              fontSize: 17,
+                              letterSpacing: 0.5,
                               color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                            )),
+                            ),
+                          ),
+                    style: OutlinedButton.styleFrom(
+                      side:
+                          const BorderSide(color: Color(0xFF251E37), width: 5),
+                      backgroundColor: Colors.deepPurple.withOpacity(0.2),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(18),
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 24, vertical: 14),
+                    ),
                   ),
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 10),
                 TextButton.icon(
                   onPressed: () {
                     Navigator.pushNamed(context, '/change-password');
                   },
                   icon: const Icon(Icons.lock_outline, color: Colors.white),
                   label: const Text(
-                    "Şifreyi Değiştir",
-                    style: TextStyle(color: Colors.white),
+                    "Change Password",
+                    style: TextStyle(color: Colors.white, fontSize: 16),
                   ),
                 ),
               ],
@@ -234,7 +258,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
       maxLines: maxLines,
       maxLength: maxLength,
       validator: (value) =>
-          value == null || value.isEmpty ? "Bu alan zorunludur" : null,
+          value == null || value.isEmpty ? "This field is required" : null,
       decoration: InputDecoration(
         labelText: label,
         labelStyle: const TextStyle(color: Colors.white70),

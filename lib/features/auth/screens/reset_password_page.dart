@@ -44,7 +44,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
       Navigator.pushReplacementNamed(context, '/login');
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("❌ Password reset failed")),
+        const SnackBar(content: Text("Password reset failed")),
       );
     } finally {
       setState(() => _isLoading = false);

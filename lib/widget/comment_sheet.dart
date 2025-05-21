@@ -77,10 +77,10 @@ class _CommentsSheetState extends State<CommentsSheet> {
           }
         });
       } else {
-        print('Yorum eklenemedi: ${response.body}');
+        print('Failed to add comment: ${response.body}');
       }
     } catch (e) {
-      print('Yorum eklenirken hata: $e');
+      print('Error while adding comment: $e');
     }
   }
 
@@ -104,13 +104,13 @@ class _CommentsSheetState extends State<CommentsSheet> {
           isLoading = false;
         });
       } else {
-        print('Yorumlar çekilemedi: ${response.body}');
+        print('Failed to fetch comments: ${response.body}');
         setState(() {
           isLoading = false;
         });
       }
     } catch (e) {
-      print('Yorumlar çekilirken hata: $e');
+      print('Error while fetching comments: $e');
       setState(() {
         isLoading = false;
       });
@@ -161,10 +161,10 @@ class _CommentsSheetState extends State<CommentsSheet> {
           commentsCount = (commentsCount - 1).clamp(0, double.infinity).toInt();
         });
       } else {
-        print('Yorum silinemedi: ${response.body}');
+        print('Failed to delete comment: ${response.body}');
       }
     } catch (e) {
-      print('Yorum silinirken hata: $e');
+      print('Error while deleting comment: $e');
     }
   }
 

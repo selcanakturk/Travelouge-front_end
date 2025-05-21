@@ -15,7 +15,7 @@ class RoutePreviewMapScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Rota Önizleme"),
+        title: const Text("Route Preview"),
         backgroundColor: Colors.black,
         foregroundColor: Colors.white,
       ),

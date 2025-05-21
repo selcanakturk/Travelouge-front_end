@@ -64,7 +64,7 @@ class _FullMapRouteScreenState extends State<FullMapRouteScreen> {
     } catch (e) {
       print('📍 Arama hatası: $e');
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Konum bulunamadı")),
+        const SnackBar(content: Text("Location not found")),
       );
     }
   }
@@ -75,8 +75,7 @@ class _FullMapRouteScreenState extends State<FullMapRouteScreen> {
       backgroundColor: Colors.black,
       appBar: AppBar(
         backgroundColor: Colors.black,
-        title:
-            const Text('Rota Haritası', style: TextStyle(color: Colors.white)),
+        title: const Text('Route Map', style: TextStyle(color: Colors.white)),
         iconTheme: const IconThemeData(color: Colors.white),
         actions: [
           IconButton(
@@ -135,7 +134,7 @@ class _FullMapRouteScreenState extends State<FullMapRouteScreen> {
                           TextInputAction.search, // ✅ Klavye tuşunu ayarla
                       decoration: const InputDecoration(
                         icon: Icon(Icons.search, color: Colors.black),
-                        hintText: "Konum ara...",
+                        hintText: "Search location...",
                         border: InputBorder.none,
                         hintStyle: TextStyle(color: Colors.black54),
                       ),
@@ -153,7 +152,7 @@ class _FullMapRouteScreenState extends State<FullMapRouteScreen> {
                   onPressed: _toggleMarking,
                   icon: isMarking ? Icons.close : Icons.edit_location_alt,
                   label: Text(
-                    isMarking ? 'İşaretlemeyi Durdur' : 'İşaretlemeye Başla',
+                    isMarking ? 'Stop Marking' : 'Start Marking',
                     style: const TextStyle(color: Colors.black),
                   ),
                 ),
@@ -162,7 +161,7 @@ class _FullMapRouteScreenState extends State<FullMapRouteScreen> {
                   onPressed: _clearRoute,
                   icon: Icons.delete_outline,
                   label: const Text(
-                    'Rotayı Temizle',
+                    'Clear Route',
                     style: TextStyle(color: Colors.black),
                   ),
                   color: Colors.redAccent,

@@ -71,7 +71,7 @@ class CustomBottomNav extends StatelessWidget {
                 padding: EdgeInsets.only(top: 6),
                 child: Icon(Icons.favorite_border, size: 28),
               ),
-              label: 'Trips',
+              label: 'Routes',
             ),
             BottomNavigationBarItem(
               icon: Padding(

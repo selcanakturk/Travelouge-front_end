@@ -56,7 +56,7 @@ class _SearchPageState extends State<SearchPage> {
         ),
       );
     } catch (e) {
-      print("❌ Arama terimi loglanamadı: $e");
+      print("Arama terimi loglanamadı: $e");
     }
   }
 
@@ -105,12 +105,12 @@ class _SearchPageState extends State<SearchPage> {
         filteredRoutes = results;
       });
     } catch (e) {
-      print("❌ Arama sırasında hata: $e");
+      print("Arama sırasında hata: $e");
     }
   }
 
   Future<void> _saveToRecent(Map<String, dynamic> route) async {
-    print("📌 Save to recent çağrıldı");
+    print("Save to recent triggered");
     final prefs = await SharedPreferences.getInstance();
     final username = await _getUsernameFromToken();
     print("👤 Aktif kullanıcı: $username");
@@ -189,6 +189,8 @@ class _SearchPageState extends State<SearchPage> {
       backgroundColor: Colors.black,
       appBar: AppBar(
         title: const Text("Search"),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () {
@@ -197,34 +199,52 @@ class _SearchPageState extends State<SearchPage> {
         ),
       ),
       bottomNavigationBar: const CustomBottomNav(currentIndex: 1),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            TextField(
-              controller: _searchController,
-              style: const TextStyle(color: Colors.white),
-              onSubmitted: (_) => _onSearchChanged(),
-              decoration: InputDecoration(
-                hintText: 'Search by route title...',
-                hintStyle: const TextStyle(color: Colors.white70),
-                prefixIcon: const Icon(Icons.search, color: Colors.white70),
-                filled: true,
-                fillColor: Colors.white12,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
+      body: Stack(
+        children: [
+          //  Arka plan görseli
+          Positioned.fill(
+            child: Image.asset(
+              'assets/png/header2.jpg',
+              fit: BoxFit.cover,
+            ),
+          ),
+          // Blur + karanlık overlay
+          Positioned.fill(
+            child: Container(
+              color: Colors.black.withOpacity(0.85),
+            ),
+          ),
+          //  Asıl içerik
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              children: [
+                TextField(
+                  controller: _searchController,
+                  style: const TextStyle(color: Colors.white),
+                  onSubmitted: (_) => _onSearchChanged(),
+                  decoration: InputDecoration(
+                    hintText: 'Search by route title...',
+                    hintStyle: const TextStyle(color: Colors.white70),
+                    prefixIcon: const Icon(Icons.search, color: Colors.white70),
+                    filled: true,
+                    fillColor: Colors.white10,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
+                    ),
+                  ),
                 ),
-              ),
+                const SizedBox(height: 20),
+                Expanded(
+                  child: _searchController.text.trim().isEmpty
+                      ? _buildRecentRoutesList()
+                      : _buildSearchResultsList(),
+                ),
+              ],
             ),
-            const SizedBox(height: 20),
-            Expanded(
-              child: _searchController.text.trim().isEmpty
-                  ? _buildRecentRoutesList()
-                  : _buildSearchResultsList(),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

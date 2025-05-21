@@ -34,8 +34,8 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(success
-              ? "🔐 Şifre başarıyla değiştirildi!"
-              : "⚠️ Şifre değiştirilemedi."),
+              ? "Password changed successfully!"
+              : "Failed to change password."),
           backgroundColor: success ? Colors.green : Colors.redAccent,
         ),
       );
@@ -51,47 +51,61 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title:
-            const Text("Şifre Değiştir", style: TextStyle(color: Colors.white)),
+        title: const Text("Change Password",
+            style: TextStyle(color: Colors.white)),
         iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: Padding(
-        padding: const EdgeInsets.all(20.0),
+        padding: const EdgeInsets.all(25.0),
         child: Form(
           key: _formKey,
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisSize: MainAxisSize.min,
             children: [
-              _buildPasswordField("Eski Şifre", _oldPassword),
+              _buildPasswordField("Current Password", _oldPassword),
               const SizedBox(height: 16),
-              _buildPasswordField("Yeni Şifre", _newPassword),
+              _buildPasswordField("New Password", _newPassword),
               const SizedBox(height: 16),
-              _buildPasswordField("Yeni Şifre Tekrar", _confirmPassword,
+              _buildPasswordField("Confirm New Password", _confirmPassword,
                   validator: (value) {
                 if (value != _newPassword.text) {
-                  return "Yeni şifreler eşleşmiyor";
+                  return "New passwords do not match";
                 }
                 return null;
               }),
-              const SizedBox(height: 32),
-              SizedBox(
-                width: double.infinity,
-                height: 48,
-                child: ElevatedButton(
-                  onPressed: _isLoading ? null : _handleChangePassword,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.purple,
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16)),
+              const SizedBox(height: 80),
+              OutlinedButton.icon(
+                onPressed: _isLoading ? null : _handleChangePassword,
+                icon: const Icon(Icons.lock_reset, color: Colors.white),
+                label: _isLoading
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Text(
+                        "Update Password",
+                        style: TextStyle(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 17,
+                          letterSpacing: 0.5,
+                          color: Colors.white,
+                        ),
+                      ),
+                style: OutlinedButton.styleFrom(
+                  side: const BorderSide(color: Color(0xFF251E37), width: 5),
+                  backgroundColor: Colors.deepPurple.withOpacity(0.2),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(18),
                   ),
-                  child: _isLoading
-                      ? const CircularProgressIndicator(color: Colors.white)
-                      : const Text("Şifreyi Değiştir",
-                          style: TextStyle(
-                              fontSize: 16,
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold)),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
                 ),
-              )
+              ),
             ],
           ),
         ),
@@ -107,7 +121,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
       style: const TextStyle(color: Colors.white),
       validator: validator ??
           (value) =>
-              value == null || value.isEmpty ? "Bu alan zorunludur" : null,
+              value == null || value.isEmpty ? "This field is required" : null,
       decoration: InputDecoration(
         hintText: hint,
         hintStyle: const TextStyle(color: Colors.white70),
