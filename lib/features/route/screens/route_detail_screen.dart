@@ -43,10 +43,10 @@ class _RouteDetailPageState extends State<RouteDetailPage> {
   }
 
   Future<void> _initPage() async {
-    await _refreshRouteData(); // önce veriyi çek
-    await checkIfLiked(); // beğeni kontrolü
-    await checkIfSaved(); // kaydetme kontrolü
-    await _loadData(); // state güncelle
+    await _refreshRouteData();
+    await checkIfLiked();
+    await checkIfSaved();
+    await _loadData();
   }
 
   Future<void> _loadData() async {
@@ -88,7 +88,7 @@ class _RouteDetailPageState extends State<RouteDetailPage> {
       });
     }
     print(coordinates);
-    //  Like bilgilerini çek
+
     setState(() {
       likesCount = widget.route['likes_count'] ?? 0;
       commentsCount = widget.route['comments_count'] ?? 0;
@@ -340,7 +340,7 @@ class _RouteDetailPageState extends State<RouteDetailPage> {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () {
-            Navigator.pop(context, isSavedChanged); // değişiklik bildirimi
+            Navigator.pop(context, isSavedChanged);
           },
         ),
       ),
@@ -370,7 +370,6 @@ class _RouteDetailPageState extends State<RouteDetailPage> {
                               errorBuilder: (context, error, stackTrace) =>
                                   Image.asset(defaultImage, fit: BoxFit.cover),
                             ),
-                            // GRADIENT OVERLAY
                             Container(
                               decoration: const BoxDecoration(
                                 gradient: LinearGradient(
@@ -550,8 +549,6 @@ class _RouteDetailPageState extends State<RouteDetailPage> {
                         ],
                       ),
                     ),
-
-                    // Ripple effect
                     Positioned.fill(
                       child: Material(
                         color: Colors.transparent,
@@ -562,8 +559,6 @@ class _RouteDetailPageState extends State<RouteDetailPage> {
                         ),
                       ),
                     ),
-
-                    // Optional: label on map
                     Positioned(
                       bottom: 8,
                       right: 12,
@@ -836,7 +831,7 @@ class _RouteDetailPageState extends State<RouteDetailPage> {
           routeOwnerId: routeOwnerId,
           onCommentAdded: () {
             setState(() {
-              commentsCount++; // anlık arttır
+              commentsCount++;
             });
           },
         );
@@ -844,7 +839,7 @@ class _RouteDetailPageState extends State<RouteDetailPage> {
     );
 
     if (result == true) {
-      _refreshRouteData(); // silme işlemi sonrası güncelleme
+      _refreshRouteData();
     }
   }
 }

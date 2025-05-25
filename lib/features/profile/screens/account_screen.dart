@@ -24,7 +24,7 @@ class _AccountPageState extends State<AccountPage> {
   @override
   void initState() {
     super.initState();
-    _fetchAndUpdateUserProfile(); // 🔥 Önce sunucudan çek
+    _fetchAndUpdateUserProfile();
   }
 
   Future<void> _fetchAndUpdateUserProfile() async {
@@ -60,11 +60,11 @@ class _AccountPageState extends State<AccountPage> {
         }
 
         setState(() {
-          _loadUserInfo(); // ✅ Güncellenmiş bilgileri oku ve ekrana bas
+          _loadUserInfo();
         });
       }
     } catch (e) {
-      print("❌ Kullanıcı profili çekilemedi: $e");
+      print("Kullanıcı profili çekilemedi: $e");
     }
   }
 
@@ -91,7 +91,6 @@ class _AccountPageState extends State<AccountPage> {
   Widget build(BuildContext context) {
     print(" profileImageUrl from SharedPreferences: $profileImageUrl");
 
-    // Flutter RAM'deki image cache'ini temizle
     WidgetsBinding.instance.addPostFrameCallback((_) {
       imageCache.clear();
       imageCache.clearLiveImages();
@@ -112,15 +111,12 @@ class _AccountPageState extends State<AccountPage> {
       ),
       bottomNavigationBar: const CustomBottomNav(currentIndex: 3),
       body: Stack(children: [
-        // Arka plan görseli
         Positioned.fill(
           child: Image.asset(
             'assets/png/header2.jpg',
             fit: BoxFit.cover,
           ),
         ),
-
-        // Blur + koyu overlay
         Positioned.fill(
           child: BackdropFilter(
             filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
@@ -134,13 +130,12 @@ class _AccountPageState extends State<AccountPage> {
             padding: const EdgeInsets.all(16),
             child: Column(
               children: [
-                // Profil Fotoğrafı
                 Container(
-                  padding: const EdgeInsets.all(3), // Border kalınlığı
+                  padding: const EdgeInsets.all(3),
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     border: Border.all(
-                      color: Colors.deepPurple, // Border rengi
+                      color: Colors.deepPurple,
                       width: 3,
                     ),
                   ),
@@ -173,7 +168,6 @@ class _AccountPageState extends State<AccountPage> {
                   ),
                 ),
                 const SizedBox(height: 20),
-
                 _buildGlassCard(children: [
                   _infoRow(Icons.person, "Name", "$firstName $lastName"),
                   const SizedBox(height: 12),
@@ -186,8 +180,6 @@ class _AccountPageState extends State<AccountPage> {
                   ]
                 ]),
                 const SizedBox(height: 75),
-
-                //  Profili Düzenle
                 outlinedGlassButton(
                   label: "Edit Profile",
                   icon: Icons.edit,
@@ -201,8 +193,6 @@ class _AccountPageState extends State<AccountPage> {
                   },
                 ),
                 const SizedBox(height: 12),
-
-                // Çıkış Yap
                 outlinedGlassButton(
                   label: "Log Out",
                   icon: Icons.logout,

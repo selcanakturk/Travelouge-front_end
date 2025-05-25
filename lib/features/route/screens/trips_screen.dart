@@ -48,7 +48,7 @@ class _TripsScreenState extends State<TripsScreen> {
       final formatter = DateFormat('d MMMM y', 'tr_TR');
       return formatter.format(localDate);
     } catch (e) {
-      print("📅 Tarih formatlama hatası: $e");
+      print("Tarih formatlama hatası: $e");
       return "No date";
     }
   }
@@ -83,7 +83,7 @@ class _TripsScreenState extends State<TripsScreen> {
         }
       });
     } catch (e) {
-      print("❌ Kullanıcı bilgisi alınamadı: $e");
+      print(" Kullanıcı bilgisi alınamadı: $e");
     }
   }
 
@@ -103,7 +103,6 @@ class _TripsScreenState extends State<TripsScreen> {
 
       List<dynamic> data = response.data;
 
-      // Verileri senkron hazırlayalım önce
       final futures = data.map<Future<Map<String, dynamic>>>((route) async {
         if (route["is_deleted"] == true) return {};
 
@@ -120,7 +119,6 @@ class _TripsScreenState extends State<TripsScreen> {
               : raw.startsWith("/")
                   ? "${Config.baseUrl}$raw"
                   : "${Config.baseUrl}/$raw";
-          //force image refesh
           imageUrl = "$imageUrl?v=${DateTime.now().millisecondsSinceEpoch}";
         }
 
@@ -144,7 +142,7 @@ class _TripsScreenState extends State<TripsScreen> {
         });
       }
     } catch (e) {
-      print("❌ Rotalar alınamadı: $e");
+      print("Rotalar alınamadı: $e");
     }
   }
 
@@ -168,14 +166,12 @@ class _TripsScreenState extends State<TripsScreen> {
       ),
       body: Stack(
         children: [
-          // Arka plan görseli
           Positioned.fill(
             child: Image.asset(
               'assets/png/header2.jpg',
               fit: BoxFit.cover,
             ),
           ),
-          //  Blur ve karartma efekti
           Positioned.fill(
             child: BackdropFilter(
               filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
@@ -184,7 +180,6 @@ class _TripsScreenState extends State<TripsScreen> {
               ),
             ),
           ),
-          // Asıl içerik
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -306,7 +301,7 @@ class _TripsScreenState extends State<TripsScreen> {
             );
 
             if (result == true) {
-              await fetchUserRoutes(); // Rotaları tekrar çek
+              await fetchUserRoutes();
             }
           },
           icon: const Icon(
@@ -370,7 +365,7 @@ class _TripsScreenState extends State<TripsScreen> {
             builder: (context) => RouteDetailPage(route: route),
           ),
         );
-        // Eğer dönüşte true geldiyse veriyi yenile
+
         if (result == true) {
           await fetchUserRoutes();
         }
@@ -493,7 +488,7 @@ Future<String> _getLocationFromCoordinates(dynamic coords) async {
       return "Location not found";
     }
   } catch (e) {
-    print("📍 Konum çözümleme hatası: $e");
+    print("Konum çözümleme hatası: $e");
     return "Konum bulunamadı";
   }
 }

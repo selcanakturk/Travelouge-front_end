@@ -76,7 +76,7 @@ class _SearchPageState extends State<SearchPage> {
     final prefs = await SharedPreferences.getInstance();
     final username = await _getUsernameFromToken();
     if (username == null) return;
-    await prefs.remove('recent_routes');
+    await prefs.remove('recent_routes_$username');
     setState(() {
       recentRoutes.clear();
     });
@@ -113,7 +113,7 @@ class _SearchPageState extends State<SearchPage> {
     print("Save to recent triggered");
     final prefs = await SharedPreferences.getInstance();
     final username = await _getUsernameFromToken();
-    print("👤 Aktif kullanıcı: $username");
+    print("Aktif kullanıcı: $username");
     if (username == null) return;
 
     String rawImage = '';
@@ -201,20 +201,17 @@ class _SearchPageState extends State<SearchPage> {
       bottomNavigationBar: const CustomBottomNav(currentIndex: 1),
       body: Stack(
         children: [
-          //  Arka plan görseli
           Positioned.fill(
             child: Image.asset(
               'assets/png/header2.jpg',
               fit: BoxFit.cover,
             ),
           ),
-          // Blur + karanlık overlay
           Positioned.fill(
             child: Container(
               color: Colors.black.withOpacity(0.85),
             ),
           ),
-          //  Asıl içerik
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: Column(

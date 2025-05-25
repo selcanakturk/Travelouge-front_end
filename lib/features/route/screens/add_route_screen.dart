@@ -135,12 +135,12 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
             content: Text(
-                isEditMode ? "✅ Route updated" : "✅ Route added successfully")),
+                isEditMode ? " Route updated" : " Route added successfully")),
       );
       Navigator.pop(context, true);
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("❌ Failed to save route")),
+        const SnackBar(content: Text("Failed to save route")),
       );
     }
   }
@@ -307,7 +307,6 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
                               <Factory<OneSequenceGestureRecognizer>>{}.toSet(),
                         ),
                       ),
-                      // Üstte tıklama katmanı
                       Positioned.fill(
                         child: Material(
                           color: Colors.transparent,

@@ -40,7 +40,6 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
         SnackBar(content: Text(response.data['message'] ?? 'Success')),
       );
 
-      // Giriş ekranına yönlendir
       Navigator.pushReplacementNamed(context, '/login');
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(

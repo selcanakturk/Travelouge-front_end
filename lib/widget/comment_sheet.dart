@@ -63,9 +63,9 @@ class _CommentsSheetState extends State<CommentsSheet> {
 
       if (response.statusCode == 201) {
         _commentController.clear();
-        await _fetchComments(); // eksik veriden kaçınmak için tümünü tekrar çek
+        await _fetchComments();
 
-        widget.onCommentAdded?.call(); // parent'a haber ver
+        widget.onCommentAdded?.call();
 
         Future.delayed(const Duration(milliseconds: 100), () {
           if (_scrollController.hasClients) {

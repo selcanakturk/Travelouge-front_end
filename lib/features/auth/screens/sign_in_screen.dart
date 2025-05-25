@@ -36,22 +36,17 @@ class _SignInPageState extends State<SignInPage> {
       backgroundColor: Colors.black,
       body: Stack(
         children: [
-          // 🌄 Arka plan resmi
           Positioned.fill(
             child: Image.asset(
               'assets/png/header2.jpg',
               fit: BoxFit.cover,
             ),
           ),
-
-          // 🌫️ Karanlık overlay
           Positioned.fill(
             child: Container(
               color: Colors.black.withOpacity(0.85),
             ),
           ),
-
-          // 🧾 İçerik
           SafeArea(
             child: Padding(
               padding:

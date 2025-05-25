@@ -128,10 +128,9 @@ class _FullMapRouteScreenState extends State<FullMapRouteScreen> {
                       controller: _searchController,
                       onSubmitted: (query) {
                         _searchAndMoveToLocation(query);
-                        FocusScope.of(context).unfocus(); // klavyeyi kapat
+                        FocusScope.of(context).unfocus();
                       },
-                      textInputAction:
-                          TextInputAction.search, // ✅ Klavye tuşunu ayarla
+                      textInputAction: TextInputAction.search,
                       decoration: const InputDecoration(
                         icon: Icon(Icons.search, color: Colors.black),
                         hintText: "Search location...",

@@ -4,7 +4,6 @@ import 'package:travelouge_frontend/core/constants/config.dart';
 
 class AuthService {
   final url = "${Config.baseUrl}/";
-  // Kayıt olma
   Future<bool> signUp(
     String username,
     String email,
@@ -31,18 +30,17 @@ class AuthService {
         }),
       );
 
-      print("✅ Kayıt başarılı: ${response.statusCode} - ${response.data}");
+      print("Kayıt başarılı: ${response.statusCode} - ${response.data}");
       return response.statusCode == 201;
     } on DioException catch (e) {
-      print("❌ Kayıt hatası: ${e.response?.data}");
+      print(" Kayıt hatası: ${e.response?.data}");
       return false;
     } catch (e) {
-      print("⚠️ Genel kayıt hatası: $e");
+      print(" Genel kayıt hatası: $e");
       return false;
     }
   }
 
-  //  Giriş işlemi
   Future<bool> signIn(String username, String password) async {
     final dio = Dio();
 
@@ -62,8 +60,7 @@ class AuthService {
           await prefs.setString('refresh_token', refreshToken);
           await prefs.setString('username', username);
 
-          // Kullanıcı bilgilerini çek ve user_id'yi kaydet
-          await fetchUserProfile(); // İçerisi aşağıda güncelleniyor
+          await fetchUserProfile();
 
           print("Giriş başarılı, token ve kullanıcı bilgileri kaydedildi!");
           return true;
@@ -76,12 +73,11 @@ class AuthService {
         return false;
       }
     } catch (e) {
-      print("⚠️ Giriş hatası: $e");
+      print("Giriş hatası: $e");
       return false;
     }
   }
 
-//  Kullanıcı bilgilerini çek ve user_id dahil kaydet
   Future<void> fetchUserProfile() async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('access_token');
@@ -103,12 +99,12 @@ class AuthService {
 
       if (data['id'] != null) {
         await prefs.setInt('user_id', data['id']);
-        print("✅ user_id kaydedildi: ${data['id']}");
+        print(" user_id kaydedildi: ${data['id']}");
       }
 
-      print("✅ Kullanıcı profil verisi başarıyla kaydedildi");
+      print("Kullanıcı profil verisi başarıyla kaydedildi");
     } catch (e) {
-      print("❌ Kullanıcı profil verisi alınamadı: $e");
+      print(" Kullanıcı profil verisi alınamadı: $e");
     }
   }
 
@@ -118,7 +114,7 @@ class AuthService {
     final token = prefs.getString('access_token');
 
     if (token == null) {
-      print("⚠️ Token bulunamadı.");
+      print("Token bulunamadı.");
       return false;
     }
 
@@ -126,7 +122,7 @@ class AuthService {
 
     try {
       final response = await dio.post(
-        "${Config.baseUrl}/change-password/", // <-- PUT yerine POST
+        "${Config.baseUrl}/change-password/",
         data: {
           "old_password": oldPassword,
           "new_password": newPassword,
@@ -140,13 +136,13 @@ class AuthService {
         ),
       );
 
-      print("✅ Şifre güncellendi: ${response.data}");
+      print("Şifre güncellendi: ${response.data}");
       return true;
     } on DioException catch (e) {
-      print("❌ Dio Hatası: ${e.response?.data}");
+      print(" Dio Hatası: ${e.response?.data}");
       return false;
     } catch (e) {
-      print("❌ Genel Hata: $e");
+      print(" Genel Hata: $e");
       return false;
     }
   }

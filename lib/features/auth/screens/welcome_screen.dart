@@ -75,7 +75,6 @@ class _WelcomeScreenState extends State<WelcomeScreen>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Bu sayfa tekrar görünür olduğunda animasyonu başlat
     _controller.forward();
   }
 
@@ -175,7 +174,6 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                   FadeTransition(opacity: anim, child: child),
             ),
           );
-          // Sayfadan dönüldüğünde animasyonu yeniden başlat
           _controller.reset();
           _controller.forward();
         },

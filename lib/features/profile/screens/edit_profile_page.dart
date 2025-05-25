@@ -78,19 +78,17 @@ class _EditProfilePageState extends State<EditProfilePage> {
     final formData = FormData.fromMap(formMap);
     try {
       final response = await dio.patch(
-        // 👈 PATCH burada!
         "${Config.baseUrl}/profile/",
         data: formData,
         options: Options(headers: {
           "Authorization": "Bearer $token",
-          "Content-Type": "multipart/form-data", // 👈 Bu önemli!
+          "Content-Type": "multipart/form-data",
         }),
       );
 
-      print("✅ SERVER RESPONSE: ${response.data}");
+      print("SERVER RESPONSE: ${response.data}");
 
       if (response.statusCode == 200) {
-        // PATCH başarılı, şimdi GET ile en güncel datayı alalım
         final profileResponse = await dio.get(
           "${Config.baseUrl}/profile/",
           options: Options(headers: {
@@ -137,7 +135,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Profil güncellenemedi.")),
       );
-      print("❌ HATA: $e");
+      print("HATA: $e");
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }

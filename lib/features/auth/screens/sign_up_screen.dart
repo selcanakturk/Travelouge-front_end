@@ -56,8 +56,6 @@ class _SignUpPageState extends State<SignUpPage> {
               fit: BoxFit.cover,
             ),
           ),
-
-          // Dark overlay for readability
           Positioned.fill(
             child: Container(
               color: Colors.black.withOpacity(0.85),
@@ -128,7 +126,6 @@ class _SignUpPageState extends State<SignUpPage> {
               ),
             ),
           ),
-          // Back Button
           Positioned(
             top: 40,
             left: 10,

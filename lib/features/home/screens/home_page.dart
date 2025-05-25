@@ -4,7 +4,6 @@ import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:travelouge_frontend/core/constants/config.dart';
 import 'package:travelouge_frontend/features/route/screens/route_detail_screen.dart';
-//import 'package:travelouge_frontend/widget/custom_app_bar.dart';
 import 'package:travelouge_frontend/widget/custom_bottom_nav.dart';
 
 class HomePage extends StatefulWidget {
@@ -15,7 +14,6 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  //final TextEditingController _searchController = TextEditingController();
   List<Map<String, dynamic>> popularRoutes = [];
   List<Map<String, dynamic>> suggestedRoutes = [];
   List<Map<String, dynamic>> savedRoutes = [];
@@ -84,15 +82,9 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // appBar: CustomAppBar(
-      //   title: "Home",
-      //   leading: null,
-      //   actions: [],
-      // ),
       backgroundColor: Colors.black,
       body: Stack(
         children: [
-          // Background image + blur
           Positioned.fill(
             child: Image.asset(
               'assets/png/header2.jpg',
@@ -107,7 +99,6 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
           ),
-          // Main content
           SafeArea(
             child: Column(
               children: [

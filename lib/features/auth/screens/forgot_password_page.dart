@@ -59,8 +59,6 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
               style: TextStyle(color: Colors.white70, fontSize: 15),
             ),
             const SizedBox(height: 30),
-
-            //  Email Input
             TextField(
               controller: _emailController,
               style: const TextStyle(color: Colors.white),
@@ -81,10 +79,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                 ),
               ),
             ),
-
             const SizedBox(height: 40),
-
-            //  Submit Button
             SizedBox(
               width: double.infinity,
               height: 55,

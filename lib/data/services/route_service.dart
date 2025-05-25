@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:travelouge_frontend/core/constants/config.dart'; // ✅ merkezi URL
+import 'package:travelouge_frontend/core/constants/config.dart';
 
 class RouteService {
   final dio = Dio();
@@ -17,7 +17,7 @@ class RouteService {
     String? token = prefs.getString('access_token');
 
     if (token == null) {
-      print("⚠️ Token bulunamadı, giriş yapmalısınız!");
+      print(" Token bulunamadı, giriş yapmalısınız!");
       return false;
     }
 
@@ -44,7 +44,7 @@ class RouteService {
 
       return response.statusCode == 201;
     } catch (e) {
-      print("❌ Rota ekleme hatası: $e");
+      print("Rota ekleme hatası: $e");
       return false;
     }
   }
@@ -61,7 +61,7 @@ class RouteService {
     String? token = prefs.getString('access_token');
 
     if (token == null) {
-      print("⚠️ Token bulunamadı, giriş yapmalısınız!");
+      print(" Token bulunamadı, giriş yapmalısınız!");
       return false;
     }
 
@@ -88,10 +88,10 @@ class RouteService {
         ),
       );
 
-      print("📥 Güncelleme sonucu: ${response.statusCode} - ${response.data}");
+      print("Güncelleme sonucu: ${response.statusCode} - ${response.data}");
       return response.statusCode == 200;
     } catch (e) {
-      print("❌ Rota güncelleme hatası: $e");
+      print(" Rota güncelleme hatası: $e");
       return false;
     }
   }
@@ -114,7 +114,7 @@ class RouteService {
 
       return response.statusCode == 200 ? response.data : [];
     } catch (e) {
-      print("❌ Rotalar alınamadı: $e");
+      print("Rotalar alınamadı: $e");
       return [];
     }
   }
@@ -137,7 +137,7 @@ class RouteService {
 
       return response.statusCode == 204;
     } catch (e) {
-      print("❌ Silme hatası: $e");
+      print(" Silme hatası: $e");
       return false;
     }
   }
