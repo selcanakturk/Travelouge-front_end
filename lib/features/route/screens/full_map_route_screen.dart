@@ -20,7 +20,7 @@ class FullMapRouteScreen extends StatefulWidget {
 class _FullMapRouteScreenState extends State<FullMapRouteScreen> {
   List<LatLng> routePoints = [];
   bool isMarking = false;
-  TextEditingController _searchController = TextEditingController();
+  final TextEditingController _searchController = TextEditingController();
   GoogleMapController? _mapController;
 
   @override

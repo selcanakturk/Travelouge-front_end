@@ -23,7 +23,7 @@ class AddRouteScreen extends StatefulWidget {
 class _AddRouteScreenState extends State<AddRouteScreen> {
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
-  List<XFile> _images = [];
+  final List<XFile> _images = [];
   List<Map<String, dynamic>> _networkImages = [];
   List<int> deletedImageIds = [];
   final RouteService _routeService = RouteService();
@@ -77,7 +77,7 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
 
   Future<void> pickImages() async {
     final ImagePicker picker = ImagePicker();
-    final List<XFile>? pickedFiles = await picker.pickMultiImage();
+    final List<XFile> pickedFiles = await picker.pickMultiImage();
     if (pickedFiles != null) {
       setState(() {
         _images.addAll(pickedFiles);
